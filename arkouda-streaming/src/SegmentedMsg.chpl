@@ -6330,9 +6330,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        testints = 200;
                        
                        while(numCurF > 0) {
-                       if testints == 200 {
-                       writeln("First ieration", finalFrontier);
-                       }
                        testints = testints -1;
                        writeln("Next Iteration of variables ", finalFrontier);
                        forall temp in finalFrontier with (ref triSet) {
@@ -6353,18 +6350,17 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                if (srcRef[u] == dstRef[temp]) {
                                vadjRef.add(dstRef[u]);
                                adj[dstRef[u], 0] = u;
-
                                }
                                }
                                }
                            for v in 0..Ne-1 {
                                if (EdgeFlag[v] != -1) {
                                if (dstRef[v] == srcRef[temp]) {
-                               //if (iterated[v] != -1) {
                                uadjRef.add(srcRef[v]);
                                adj[srcRef[v],1] = v;
                                
 
+                               
                                }
                                if (dstRef[v] == dstRef[temp]) {
                                vadjRef.add(srcRef[v]);
@@ -6373,41 +6369,36 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                               }
                            }
-                           }
+                           
                            
                            for u in uadjRef {
                                if (vadjRef.contains(u)) {
-                               if (!(triSet.contains((u, srcRef[temp], dstRef[temp])) || triSet.contains((u, dstRef[temp], srcRef[temp])) || triSet.contains((dstRef[temp], srcRef[temp], u)) || triSet.contains((dstRef[temp], u, srcRef[temp])) || triSet.contains((srcRef[temp], dstRef[temp], u)) || triSet.contains((srcRef[temp], u, dstRef[temp])))) {
-                               
-                               writeln("Hi we got here", temp);
-                               triSet.add((srcRef[temp], dstRef[temp],u));
-                               if (EdgeCnt[adj[u,0]] > 0) {
-                               EdgeCnt[adj[u,0]] = EdgeCnt[adj[u,0]] - 1;
-                               frontier.add(adj[u,0]);
-                                writeln("this is added ", adj[u,0]);
-                               }
-                               if (EdgeCnt[adj[u,1]] > 0) {
-                               EdgeCnt[adj[u,1]] = EdgeCnt[adj[u,1]] - 1;
-                               frontier.add(adj[u,1]);
-                               writeln("this is added ", adj[u,1]);
-                               }
-                               if (EdgeCnt[temp] > 0) {
-                               EdgeCnt[temp] = EdgeCnt[temp] - 1;
-                               frontier.add(temp);
-                               }
-                               
-                               }
-                               
+                                   if (!(triSet.contains((u, srcRef[temp], dstRef[temp])) || triSet.contains((u, dstRef[temp], srcRef[temp])) || triSet.contains((dstRef[temp], srcRef[temp], u)) || triSet.contains((dstRef[temp], u, srcRef[temp])) || triSet.contains((srcRef[temp], dstRef[temp], u)) || triSet.contains((srcRef[temp], u, dstRef[temp])))) {
+                                       writeln("Hi we got here", temp);
+                                       triSet.add((srcRef[temp], dstRef[temp],u));
+                                       if (EdgeCnt[adj[u,0]] > 0) {
+                                           EdgeCnt[adj[u,0]] = EdgeCnt[adj[u,0]] - 1;
+                                           frontier.add(adj[u,0]);
+                                           writeln("this is added ", adj[u,0]);
+                                       }
+                                       if (EdgeCnt[adj[u,1]] > 0) {
+                                           EdgeCnt[adj[u,1]] = EdgeCnt[adj[u,1]] - 1;
+                                           frontier.add(adj[u,1]);
+                                           writeln("this is added ", adj[u,1]);
+                                       }
+                                       if (EdgeCnt[temp] > 0) {
+                                           EdgeCnt[temp] = EdgeCnt[temp] - 1;
+                                           frontier.add(temp);
+                                       }
+                                   }
                                }
                                }
                                
-                           } //Okay, so you need to keep iterating through the k-Truss until it is zero
-
-
+                           } 
                        finalFrontier.clear();
-                       for e in frontier {
-                           finalFrontier.add(e);
-                       }
+                           for e in frontier {
+                               finalFrontier.add(e);
+                           }
                        numCurF = finalFrontier.size;
                        frontier.clear();
                        writeln("End", numCurF, " ", finalFrontier);
@@ -6418,14 +6409,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        tempsetTwo.add(i);
                        }
                        }
-                       //writeln(EdgeCnt);
                        writeln("These are the triangles", tempsetTwo);
-                       
-                       
-
-             
-
-            writeln("Success Final");
+                       writeln("these are the counts", EdgeCnt);
              return "Indeed";
                         
           }
