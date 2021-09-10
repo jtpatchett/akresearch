@@ -6311,11 +6311,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        checkFlag = 1;
                        var temp:int;
                        //var testBag = new DistBag(int, Locales);
-                       var frontier = new DistBag(int, Locales);
-                       var finalFrontier= new DistBag(int, Locales);
-                       forall e in 0..Ne {
+                       var frontier = new set(int, parSafe = true);
+                       var finalFrontier= new set(int, parSafe = true);
+                       for e in 0..Ne {
                            if (EdgeCnt[e] < k) {
+                               if EdgeCnt[e] > 0 {
                                finalFrontier.add(e);
+                               }
                            }
                            }
                        var numCurF:int;
@@ -6331,10 +6333,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        
                        while(numCurF > 0) {
                        testints = testints -1;
-                       writeln("Next Iteration of variables ", finalFrontier);
-                       forall temp in finalFrontier with (ref triSet) {
-                           
-                           writeln("here is where we are ", temp, " ", srcRef[temp], " ", dstRef[temp]);
+                       //writeln("Next Iteration of variables ", finalFrontier);
+                       forall temp in finalFrontier with (ref triSet, ref finalFrontier, ref frontier) {
+                           //writeln("here is where we are ", temp, " ", srcRef[temp], " ", dstRef[temp]);
                            var adj: [0..Ne-1, 0..1] int;
                            adj = -1;
                            var uadjRef = new set(int, parSafe=true);
@@ -6342,7 +6343,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            uadjRef.clear();
                            vadjRef.clear();
                            for u in 0..Ne-1 {
-                               if (EdgeFlag[u] != -1) {
+                               //if (EdgeFlag[u] != -1) {
                                if (srcRef[u] == srcRef[temp]) {
                                uadjRef.add(dstRef[u]);
                                adj[dstRef[u], 0] = u;
@@ -6351,10 +6352,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                vadjRef.add(dstRef[u]);
                                adj[dstRef[u], 0] = u;
                                }
-                               }
+                               //}
                                }
                            for v in 0..Ne-1 {
-                               if (EdgeFlag[v] != -1) {
+                               //if (EdgeFlag[v] != -1) {
                                if (dstRef[v] == srcRef[temp]) {
                                uadjRef.add(srcRef[v]);
                                adj[srcRef[v],1] = v;
@@ -6367,14 +6368,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                adj[srcRef[v],1] = v;
                                
                                }
-                              }
+                             // }
                            }
                            
                            
                            for u in uadjRef {
                                if (vadjRef.contains(u)) {
                                    if (!(triSet.contains((u, srcRef[temp], dstRef[temp])) || triSet.contains((u, dstRef[temp], srcRef[temp])) || triSet.contains((dstRef[temp], srcRef[temp], u)) || triSet.contains((dstRef[temp], u, srcRef[temp])) || triSet.contains((srcRef[temp], dstRef[temp], u)) || triSet.contains((srcRef[temp], u, dstRef[temp])))) {
-                                       writeln("Hi we got here", temp);
+                                       //writeln("Hi we got here", temp);
                                        triSet.add((srcRef[temp], dstRef[temp],u));
                                        if (EdgeCnt[adj[u,0]] > 0) {
                                            EdgeCnt[adj[u,0]] = EdgeCnt[adj[u,0]] - 1;
@@ -6399,9 +6400,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for e in frontier {
                                finalFrontier.add(e);
                            }
+                           finalFrontier = frontier;
+                           frontier.clear();
                        numCurF = finalFrontier.size;
-                       frontier.clear();
-                       writeln("End", numCurF, " ", finalFrontier);
+                       //frontier.clear();
+                       //writeln("End", numCurF, " ", finalFrontier);
                        }
                        var tempsetTwo = new set(int, parSafe = true);
                        for i in 0..Ne-1 {
