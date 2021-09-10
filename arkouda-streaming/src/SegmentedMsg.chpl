@@ -6228,6 +6228,210 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     }
                     
                     
+      proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
+                        neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
+          var k=3:int;
+          var KeepCheck=true:bool;
+          var EdgeDeleted=false:[0..Ne-1] bool;
+          var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
+          var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
+          var TriCount=0:[0..Ne-1] int;
+          coforall loc in Locales {
+              on loc {
+                    var ld = src.localSubdomain();
+                    var startEdge = ld.low;
+                    var endEdge = ld.high;
+                    forall i in startEdge..endEdge {
+                        var v1=src[i];
+                        var v2=dst[i];
+                        if ((nei[v1]+neiR[v1])<k-1 || 
+                            (nei[v2]+neiR[v2])<k-1) {
+                              EdgeDeleted[i]=true;
+                              // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
+                        }
+                    }
+              }        
+          }        
+          proc findEdge(u:int,v:int):int {
+                                        proc binE(ary:[?D],l:int,h:int,key:int):int {
+                                             if (ary[l]==key){
+                                                  return l;
+                                             }
+                                             if (ary[h]==key){
+                                                  return h;
+                                             }
+                                             var m= (l+h)/2:int;
+                                             if (ary[m]==key ){
+                                                  return m;
+                                             } else {
+                                                 if (ary[m]<key) {
+                                                    return binE(ary,m+1,h,key);
+                                                 }
+                                                 else {
+                                                    return binE(ary,l,m-1,key);
+                                                 }
+                                                 }
+                                             }
+                                        }
+                                        var beginE=start_i[u];
+                                        if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
+                                            var e=binE(dst,beginE,beginE+nei[u]-1,v);
+                                            return e;
+                                        }
+                                        beginE=start_iR[u];
+                                        if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                                            var e=binE(dstR,beginE,beginE+nei[u]-1,v);
+                                            return e;
+                                        }
+                                        beginE=start_i[v];
+                                        if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                                            var e=binE(dst,beginE,beginE+nei[u]-1,v);
+                                            return e;
+                                        }
+                                        beginE=start_iR[v];
+                                        if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                                            var e=binE(dstR,beginE,beginE+nei[u]-1,v);
+                                            return e;
+                                        }
+                                        return 0;
+          }
+          while (KeepCheck) {
+              // now we calculate the triangles
+              coforall loc in Locales {
+                  on loc {
+                     var tricountPar:int; 
+                     var ld = src.localSubdomain();
+                     var startEdge = ld.low;
+                     var endEdge = ld.high;
+                     var v1:int;
+                     var v2:int;
+                     var uadj = new set(int, parSafe = true);
+                     var vadj = new set(int, parSafe = true);
+                                
+                     forall i in startEdge..endEdge with (ref uadj,ref vadj) {
+                            u = src[i];
+                            v = dst[i];
+                            var beginTmp=start_i[u];
+                            var endTmp=beginTmp+nei[u]-1;
+                                        
+                            if (EdgeDeleterd[i]==false ) {
+                               forall x in dst[beginTmp..endTmp] {
+                                   var  e=findEdge(u,x);
+                                   if (EdgeDeleted[e] ==false) {
+                                             uadj.add(x);
+                                   }
+                               }
+                               beginTmp=start_iR[u];
+                               endTmp=beginTmp+neiR[u]-1;
+                               forall x in dstR[beginTmp..endTmp] {
+                                   var e=findEdge(u,x);
+                                   if (EdgeDeleted[e] ==false) {
+                                             uadj.add(x);
+                                   }
+                               }
+                               beginTmp=start_i[v];
+                               endTmp=beginTmp+nei[v]-1;
+                               forall x in dst[beginTmp..endTmp] {
+                                   var e=findEdge(v,x);
+                                   if (EdgeDeleted[e] ==false) {
+                                             vadj.add(x);
+                                   }
+                               }
+                               beginTmp=start_iR[v];
+                               endTmp=beginTmp+neiR[v]-1;
+                               forall x in dstR[beginTmp..endTmp] {
+                                   var e=findEdge(v,x);
+                                   if (EdgeDeleted[e] ==false) {
+                                             vadj.add(x);
+                                   }
+                               }
+                               var Count=0:int;
+                               forall u in uadj with ( + reduce Count) {
+                                   if vadj.contains(u) {
+                                      Count +=1;
+                                   }
+                               }
+                               TriCount[i] = Count;
+                            }   
+                     }// end of forall. We get the number of triangles for each edge
+
+                     forall e in startEdge..endEdge with(ref SetCurF) {
+                               if (TriCount[e] < k-2) {
+                                     EdgeDeleted[e] = true;
+                                     SetCurF.add(e);
+                               }
+                     }
+                     if SetCurF.isEmpty() {
+                          KeepCheck=false;
+                          contiune;     
+                     }
+                     proc xlocal(x :int, low:int, high:int):bool{
+                                  if (low<=x && x<=high) {
+                                      return true;
+                                  } else {
+                                      return false;
+                                  }
+                     }
+                     while (!SetCurF.isEmpty()) {
+                           forall i in SetCurF with (ref SetNextF) {
+                              if ((xlocal(i,startBegin,endEnd)) ) {
+                                  var    v1=src[i];
+                                  var    v2=dst[i];
+                                  var nextStart=start_i[v1];
+                                  var nextEnd=start_i[v1]+nei[v1]-1;
+                                  proc IsEdge(u:int,v:int):bool  {
+                                        var ret=false;
+                                        var beginE=start_i[u];
+                                        if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
+                                            return true;
+                                        }
+                                        beginE=start_iR[u];
+                                        if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                                            return true;
+                                        }
+                                        beginE=start_i[v];
+                                        if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                                            return true;
+                                        }
+                                        beginE=start_iR[v];
+                                        if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                                            return true;
+                                        }
+                                        return false;
+                                  }
+                                  proc IsTriangle(e1:int,e2:int):bool  {
+                                        var ret=false:bool;
+                                        var u1=src[e1];
+                                        var v1=dst[e1];
+                                        var u2=src[e2];
+                                        var v2=dst[e2];
+                                        if (((u1==u2) && IsEdge(v1,v2)) ||  
+                                            ((u1==v2) && IsEdge(v1,u2)) ||  
+                                            ((v1==u2) && IsEdge(u1,v2)) ||  
+                                            ((v1==v2) && IsEdge(u1,u2)))  { 
+                                            ret=true;
+                                        }
+                                        return ret;
+                                  }
+                                  forall j in nextStart..nextEnd with (ref SetNextF){
+                                         if ( (EdgeDeleted[j]==false) &&  IsTriangle(i,j)) {
+                                                   TriCount[j]-=1;
+                                                   if (TriCount[j]<k-2) {
+                                                      EdgeDeleted[j]=true;
+                                                      SetNextF.add(j);
+                                                   }
+                                               }
+                                         }
+                                  }
+                              } 
+                              SetCurF<=>SetNextF;
+                              SetNextF.clear();
+                     }//end while  
+                  } //end on loc 
+              } //end coforall loc in Locales 
+          }// end while (KeepCheck) 
+                        
+        }
                     
         proc kTrussInitVTwo(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
