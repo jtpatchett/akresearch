@@ -6252,7 +6252,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     }
               }        
           }        
+          
+          // given vertces u and v, return the edge ID e=<u,v> or e=<v,u>
           proc findEdge(u:int,v:int):int {
+              //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
               proc binSearchE(ary:[?D] int,l:int,h:int,key:int):int {
                        if (ary[l]==key){
                             return l;
@@ -6290,6 +6293,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
               return 0;
           }
+
+          //we will try to remove all the unnecessary edges in the graph
           while (KeepCheck) {
               // first we calculate the number of triangles
               coforall loc in Locales {
@@ -6310,7 +6315,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             if (EdgeDeleterd[i]==false ) {
                                forall x in dst[beginTmp..endTmp] {
                                    var  e=findEdge(u,x);
-                                   if (EdgeDeleted[e] ==false) {
+                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
                                }
@@ -6318,7 +6323,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                endTmp=beginTmp+neiR[u]-1;
                                forall x in dstR[beginTmp..endTmp] {
                                    var e=findEdge(u,x);
-                                   if (EdgeDeleted[e] ==false) {
+                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
                                }
@@ -6327,6 +6332,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                forall x in dst[beginTmp..endTmp] {
                                    var e=findEdge(v,x);
                                    if (EdgeDeleted[e] ==false) {
+                                   if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
                                }
@@ -6334,17 +6340,19 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                endTmp=beginTmp+neiR[v]-1;
                                forall x in dstR[beginTmp..endTmp] {
                                    var e=findEdge(v,x);
-                                   if (EdgeDeleted[e] ==false) {
+                                   if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
                                }
                                var Count=0:int;
-                               forall u in uadj with ( + reduce Count) {
-                                   if vadj.contains(u) {
+                               forall s in uadj with ( + reduce Count) {
+                                   if vadj.contains(s) {
                                       Count +=1;
                                    }
                                }
+                                
                                TriCount[i] = Count;
+                               // here we get the number of triangles of edge ID i
                             }   
                      }// end of forall. We get the number of triangles for each edge
 
