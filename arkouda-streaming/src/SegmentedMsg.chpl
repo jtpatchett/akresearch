@@ -6253,53 +6253,47 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }        
           proc findEdge(u:int,v:int):int {
-                                        proc binE(ary:[?D],l:int,h:int,key:int):int {
-                                             if (ary[l]==key){
-                                                  return l;
-                                             }
-                                             if (ary[h]==key){
-                                                  return h;
-                                             }
-                                             var m= (l+h)/2:int;
-                                             if (ary[m]==key ){
-                                                  return m;
-                                             } else {
-                                                 if (ary[m]<key) {
-                                                    return binE(ary,m+1,h,key);
-                                                 }
-                                                 else {
-                                                    return binE(ary,l,m-1,key);
-                                                 }
-                                                 }
-                                             }
-                                        }
-                                        var beginE=start_i[u];
-                                        if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
-                                            var e=binE(dst,beginE,beginE+nei[u]-1,v);
-                                            return e;
-                                        }
-                                        beginE=start_iR[u];
-                                        if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
-                                            var e=binE(dstR,beginE,beginE+nei[u]-1,v);
-                                            return e;
-                                        }
-                                        beginE=start_i[v];
-                                        if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
-                                            var e=binE(dst,beginE,beginE+nei[u]-1,v);
-                                            return e;
-                                        }
-                                        beginE=start_iR[v];
-                                        if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
-                                            var e=binE(dstR,beginE,beginE+nei[u]-1,v);
-                                            return e;
-                                        }
-                                        return 0;
+              proc binSearchE(ary:[?D] int,l:int,h:int,key:int):int {
+                       if (ary[l]==key){
+                            return l;
+                       }
+                       if (ary[h]==key){
+                            return h;
+                       }
+                       var m= (l+h)/2:int;
+                       if (ary[m]==key ){
+                            return m;
+                       } else {
+                            if (ary[m]<key) {
+                              return binSearchE(ary,m+1,h,key);
+                            }
+                            else {
+                                    return binSearchE(ary,l,m-1,key);
+                            }
+                       }
+              }
+              var beginE=start_i[u];
+              if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
+                       return binSearchE(dst,beginE,beginE+nei[u]-1,v);
+              }
+              beginE=start_iR[u];
+              if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                       return binSearchE(dstR,beginE,beginE+neiR[u]-1,v);
+              }
+              beginE=start_i[v];
+              if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                       return binSearchE(dst,beginE,beginE+nei[u]-1,v);
+              }
+              beginE=start_iR[v];
+              if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                       return binE(dstR,beginE,beginE+neiR[u]-1,v);
+              }
+              return 0;
           }
           while (KeepCheck) {
-              // now we calculate the triangles
+              // first we calculate the number of triangles
               coforall loc in Locales {
                   on loc {
-                     var tricountPar:int; 
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
                      var endEdge = ld.high;
@@ -6309,11 +6303,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var vadj = new set(int, parSafe = true);
                                 
                      forall i in startEdge..endEdge with (ref uadj,ref vadj) {
-                            u = src[i];
-                            v = dst[i];
+                            var u = src[i];
+                            var v = dst[i];
                             var beginTmp=start_i[u];
                             var endTmp=beginTmp+nei[u]-1;
-                                        
                             if (EdgeDeleterd[i]==false ) {
                                forall x in dst[beginTmp..endTmp] {
                                    var  e=findEdge(u,x);
@@ -6363,7 +6356,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      }
                      if SetCurF.isEmpty() {
                           KeepCheck=false;
-                          contiune;     
+                          //continue;
                      }
                      proc xlocal(x :int, low:int, high:int):bool{
                                   if (low<=x && x<=high) {
@@ -6374,7 +6367,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      }
                      while (!SetCurF.isEmpty()) {
                            forall i in SetCurF with (ref SetNextF) {
-                              if ((xlocal(i,startBegin,endEnd)) ) {
+                              if ((xlocal(i,startEdge,endEdge)) ) {
                                   var    v1=src[i];
                                   var    v2=dst[i];
                                   var nextStart=start_i[v1];
