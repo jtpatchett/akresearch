@@ -6251,7 +6251,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         }
                     }
               }        
-          }        
+          }// end of coforall loc        
           
           // given vertces u and v, return the edge ID e=<u,v> or e=<v,u>
           proc findEdge(u:int,v:int):int {
@@ -6274,28 +6274,56 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                     return binSearchE(ary,l,m-1,key);
                             }
                        }
-              }
+                       return -1;
+              }// end of proc
+
               var beginE=start_i[u];
+              var eid:int;
               if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
-                       return binSearchE(dst,beginE,beginE+nei[u]-1,v);
+                       eid=binSearchE(dst,beginE,beginE+nei[u]-1,v);
+              } else {
+                eid=-1;
               }
-              beginE=start_iR[u];
-              if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
-                       return binSearchE(dstR,beginE,beginE+neiR[u]-1,v);
-              }
-              beginE=start_i[v];
-              if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
-                       return binSearchE(dst,beginE,beginE+nei[u]-1,v);
-              }
-              beginE=start_iR[v];
-              if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
-                       return binE(dstR,beginE,beginE+neiR[u]-1,v);
-              }
-              return 0;
+              if (eid==-1) {// if b
+                 beginE=start_i[v];
+                 if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                       eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
+                 }
+                 if (eid==-1) {// if a
+                    beginE=start_iR[u];
+                    if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                       var e=binSearchE(dstR,beginE,beginE+neiR[u]-1,v);
+                       var v1=srcR[e];
+                       var v2=dstR[e];
+                       //here we change the edge ID found in reverse array srcR and dstR into the ID of src and dst
+                       eid=binSearchE(dst,start_i[v2],start_i[v2]+nei[v2]-1,v1);
+                    }
+                    if (eid==-1) {
+                         beginE=start_iR[v];
+                         if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                            var e=binSearchE(dstR,beginE,beginE+neiR[v]-1,u);
+                            var v1=srcR[e];
+                            var v2=dstR[e];
+                            //here we change the edge ID found in reverse array srcR and dstR into the ID of src and dst
+                            eid=binSearchE(dst,start_i[v2],start_i[v2]+nei[v2]-1,v1);
+                         }
+                    } 
+                 }// end of if a
+              }// end of if b
+              return eid;
+          }// end of  proc findEdge(u:int,v:int)
+
+          proc xlocal(x :int, low:int, high:int):bool{
+                if (low<=x && x<=high) {
+                      return true;
+                } else {
+                      return false;
+                }
           }
 
           //we will try to remove all the unnecessary edges in the graph
           while (KeepCheck) {
+
               // first we calculate the number of triangles
               coforall loc in Locales {
                   on loc {
@@ -6306,7 +6334,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var v2:int;
                      var uadj = new set(int, parSafe = true);
                      var vadj = new set(int, parSafe = true);
-                                
                      forall i in startEdge..endEdge with (ref uadj,ref vadj) {
                             var u = src[i];
                             var v = dst[i];
@@ -6331,7 +6358,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                endTmp=beginTmp+nei[v]-1;
                                forall x in dst[beginTmp..endTmp] {
                                    var e=findEdge(v,x);
-                                   if (EdgeDeleted[e] ==false) {
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
@@ -6350,10 +6376,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                       Count +=1;
                                    }
                                }
-                                
                                TriCount[i] = Count;
                                // here we get the number of triangles of edge ID i
-                            }   
+                            }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
                      forall e in startEdge..endEdge with(ref SetCurF) {
@@ -6362,77 +6387,161 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                      SetCurF.add(e);
                                }
                      }
-                     if SetCurF.isEmpty() {
+                     if (SetCurF.isEmpty() ) {
                           KeepCheck=false;
-                          //continue;
-                     }
-                     proc xlocal(x :int, low:int, high:int):bool{
-                                  if (low<=x && x<=high) {
-                                      return true;
-                                  } else {
-                                      return false;
-                                  }
                      }
                      while (!SetCurF.isEmpty()) {
                            forall i in SetCurF with (ref SetNextF) {
-                              if ((xlocal(i,startEdge,endEdge)) ) {
+                              if (xlocal(i,startEdge,endEdge) ) {//each local only check the own edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
                                   var nextStart=start_i[v1];
                                   var nextEnd=start_i[v1]+nei[v1]-1;
-                                  proc IsEdge(u:int,v:int):bool  {
-                                        var ret=false;
-                                        var beginE=start_i[u];
-                                        if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
-                                            return true;
-                                        }
-                                        beginE=start_iR[u];
-                                        if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
-                                            return true;
-                                        }
-                                        beginE=start_i[v];
-                                        if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
-                                            return true;
-                                        }
-                                        beginE=start_iR[v];
-                                        if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
-                                            return true;
-                                        }
-                                        return false;
-                                  }
-                                  proc IsTriangle(e1:int,e2:int):bool  {
-                                        var ret=false:bool;
-                                        var u1=src[e1];
-                                        var v1=dst[e1];
-                                        var u2=src[e2];
-                                        var v2=dst[e2];
-                                        if (((u1==u2) && IsEdge(v1,v2)) ||  
-                                            ((u1==v2) && IsEdge(v1,u2)) ||  
-                                            ((v1==u2) && IsEdge(u1,v2)) ||  
-                                            ((v1==v2) && IsEdge(u1,u2)))  { 
-                                            ret=true;
-                                        }
-                                        return ret;
-                                  }
                                   forall j in nextStart..nextEnd with (ref SetNextF){
-                                         if ( (EdgeDeleted[j]==false) &&  IsTriangle(i,j)) {
-                                                   TriCount[j]-=1;
-                                                   if (TriCount[j]<k-2) {
-                                                      EdgeDeleted[j]=true;
-                                                      SetNextF.add(j);
+                                         var v3=src[j];
+                                         var v4=dst[j]; 
+                                         var tmpe:int;
+                                         if ( EdgeDeleted[j]==false ) {
+                                                   // we first check if  the two different vertices can be the third edge
+                                                   if (v1==v3)  {
+                                                       tmpe=findEdge(v2,v4);
+                                                   } else {
+                                                      if (v1==v4) {
+                                                       tmpe=findEdge(v2,v3);
+                                                      }
                                                    }
-                                               }
+                                                   if (v2==v3)  {
+                                                       tmpe=findEdge(v1,v4);
+                                                   } else {
+                                                      if (v2==v4) {
+                                                       tmpe=findEdge(v1,v3);
+                                                      }
+                                                   }
+                                                   if (tmpe!=-1) {// there is such third edge
+                                                       if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
+                                                          TriCount[j]-=1;//reduce the number of triangles
+                                                          if (TriCount[j]<k-2) {
+                                                              EdgeDeleted[j]=true;
+                                                              SetNextF.add(j);
+                                                          }
+                                                       }
+                                                   }
                                          }
-                                  }
-                              } 
-                              SetCurF<=>SetNextF;
-                              SetNextF.clear();
-                     }//end while  
+                                  }// end of  forall j in nextStart..nextEnd 
+
+                                  nextStart=start_i[v2];
+                                  nextEnd=start_i[v2]+nei[v2]-1;
+                                  forall j in nextStart..nextEnd with (ref SetNextF){
+                                         var v3=src[j];
+                                         var v4=dst[j]; 
+                                         var tmpe:int;
+                                         if ( EdgeDeleted[j]==false ) {
+                                                   // we first check if  the two different vertices can be the third edge
+                                                   if (v1==v3)  {
+                                                       tmpe=findEdge(v2,v4);
+                                                   } else {
+                                                      if (v1==v4) {
+                                                       tmpe=findEdge(v2,v3);
+                                                      }
+                                                   }
+                                                   if (v2==v3)  {
+                                                       tmpe=findEdge(v1,v4);
+                                                   } else {
+                                                      if (v2==v4) {
+                                                       tmpe=findEdge(v1,v3);
+                                                      }
+                                                   }
+                                                   if (tmpe!=-1) {
+                                                       if (EdgeDeleted[tmpe]==false) {
+                                                          TriCount[j]-=1;
+                                                          if (TriCount[j]<k-2) {
+                                                              EdgeDeleted[j]=true;
+                                                              SetNextF.add(j);
+                                                          }
+                                                       }
+                                                   }
+                                         }
+                                  }// end of  forall j in nextStart..nextEnd 
+
+
+                                  nextStart=start_iR[v1];
+                                  nextEnd=start_iR[v1]+neiR[v1]-1;
+                                  forall j in nextStart..nextEnd with (ref SetNextF){
+                                         var v3=srcR[j];
+                                         var v4=dstR[j]; 
+                                         var e1=findEdge(v3,v4);
+                                         var tmpe:int;
+                                         if ( EdgeDeleted[e1]==false ) {
+                                                   // we first check if  the two different vertices can be the third edge
+                                                   if (v1==v3)  {
+                                                       tmpe=findEdge(v2,v4);
+                                                   } else {
+                                                      if (v1==v4) {
+                                                       tmpe=findEdge(v2,v3);
+                                                      }
+                                                   }
+                                                   if (v2==v3)  {
+                                                       tmpe=findEdge(v1,v4);
+                                                   } else {
+                                                      if (v2==v4) {
+                                                       tmpe=findEdge(v1,v3);
+                                                      }
+                                                   }
+                                                   if (tmpe!=-1) {
+                                                       if (EdgeDeleted[tmpe]==false) {
+                                                          TriCount[e1]-=1;
+                                                          if (TriCount[e1]<k-2) {
+                                                              EdgeDeleted[e1]=true;
+                                                              SetNextF.add(e1);
+                                                          }
+                                                       }
+                                                   }
+                                         }
+                                  }// end of  forall j in nextStart..nextEnd 
+
+                                  nextStart=start_iR[v2];
+                                  nextEnd=start_iR[v2]+neiR[v2]-1;
+                                  forall j in nextStart..nextEnd with (ref SetNextF){
+                                         var v3=srcR[j];
+                                         var v4=dstR[j]; 
+                                         var e1=findEdge(v3,v4);
+                                         var tmpe:int;
+                                         if ( EdgeDeleted[e1]==false ) {
+                                                   // we first check if  the two different vertices can be the third edge
+                                                   if (v1==v3)  {
+                                                       tmpe=findEdge(v2,v4);
+                                                   } else {
+                                                      if (v1==v4) {
+                                                       tmpe=findEdge(v2,v3);
+                                                      }
+                                                   }
+                                                   if (v2==v3)  {
+                                                       tmpe=findEdge(v1,v4);
+                                                   } else {
+                                                      if (v2==v4) {
+                                                       tmpe=findEdge(v1,v3);
+                                                      }
+                                                   }
+                                                   if (tmpe!=-1) {
+                                                       if (EdgeDeleted[tmpe]==false) {
+                                                          TriCount[e1]-=1;
+                                                          if (TriCount[e1]<k-2) {
+                                                              EdgeDeleted[e1]=true;
+                                                              SetNextF.add(e1);
+                                                          }
+                                                       }
+                                                   }
+                                         }
+                                  }// end of  forall j in nextStart..nextEnd 
+                              } // end if (xlocal(i,startEdge,endEdge) 
+                           } // end forall i in SetCurF with (ref SetNextF) 
+                           SetCurF<=>SetNextF;
+                           SetNextF.clear();
+                     }// end of while (!SetCurF.isEmpty()) 
                   } //end on loc 
               } //end coforall loc in Locales 
           }// end while (KeepCheck) 
-                        
-        }
+        } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                     
         proc kTrussInitVTwo(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
