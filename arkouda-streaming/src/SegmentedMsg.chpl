@@ -6258,6 +6258,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           proc findEdge(u:int,v:int):int {
               //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
               proc binSearchE(ary:[?D] int,l:int,h:int,key:int):int {
+                       if (l>h) {
+                            return -1;
+                       }
                        if (ary[l]==key){
                             return l;
                        }
