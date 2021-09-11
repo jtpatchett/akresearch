@@ -6230,7 +6230,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     
       proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
-          var k=3:int;
+          var k=4:int;
           var KeepCheck=true:bool;
           //var EdgeDeleted=false:[0..Ne-1] bool;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
@@ -6329,7 +6329,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           while (KeepCheck) {
 
               // first we calculate the number of triangles
-              coforall loc in Locales {
+              coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
                   on loc {
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
@@ -6338,13 +6338,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var v2:int;
                      var uadj = new set(int, parSafe = true);
                      var vadj = new set(int, parSafe = true);
-                     forall i in startEdge..endEdge with (ref uadj,ref vadj) {
+                     forall i in startEdge..endEdge {
                             var u = src[i];
                             var v = dst[i];
                             var beginTmp=start_i[u];
                             var endTmp=beginTmp+nei[u]-1;
-                            if (EdgeDeleterd[i]==false ) {
-                               forall x in dst[beginTmp..endTmp] {
+                            if (EdgeDeleted[i]==false ) {
+                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
                                    var  e=findEdge(u,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
@@ -6352,7 +6352,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                                beginTmp=start_iR[u];
                                endTmp=beginTmp+neiR[u]-1;
-                               forall x in dstR[beginTmp..endTmp] {
+                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
                                    var e=findEdge(u,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
@@ -6360,7 +6360,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                                beginTmp=start_i[v];
                                endTmp=beginTmp+nei[v]-1;
-                               forall x in dst[beginTmp..endTmp] {
+                               forall x in dst[beginTmp..endTmp] with (ref vadj) {
                                    var e=findEdge(v,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
@@ -6368,7 +6368,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                                beginTmp=start_iR[v];
                                endTmp=beginTmp+neiR[v]-1;
-                               forall x in dstR[beginTmp..endTmp] {
+                               forall x in dstR[beginTmp..endTmp] with (ref vadj) {
                                    var e=findEdge(v,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
@@ -6545,6 +6545,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   } //end on loc 
               } //end coforall loc in Locales 
           }// end while (KeepCheck) 
+          return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                     
         proc kTrussInitVTwo(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
@@ -6839,7 +6840,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
               //tri_edge_kernel(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            //ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-                kTrussInitVTwo(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                kTrussParallel_tmp(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       writeln("Success");
       //timer.stop();
