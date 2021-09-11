@@ -6232,7 +6232,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
           var k=3:int;
           var KeepCheck=true:bool;
-          var EdgeDeleted=false:[0..Ne-1] bool;
+          //var EdgeDeleted=false:[0..Ne-1] bool;
+          var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
           var TriCount=0:[0..Ne-1] int;
