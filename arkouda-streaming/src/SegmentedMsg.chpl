@@ -6234,9 +6234,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var KeepCheck=true:bool;
           //var EdgeDeleted=false:[0..Ne-1] bool;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
+          EdgeDeleted=false;
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
-          var TriCount=0:[0..Ne-1] int;
+          //var TriCount=0:[0..Ne-1] int;
+          var TriCount=makeDistArray(Ne,bool): int;
+          TriCount=0;
           coforall loc in Locales {
               on loc {
                     var ld = src.localSubdomain();
