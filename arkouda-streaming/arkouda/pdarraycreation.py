@@ -1283,9 +1283,8 @@ def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW]) -> pdarr
         #Change this for Chapel
         #if (cast(int,graph.directed)!=0)  :
         kTrussValue=4
-        #args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
-        #         kTrussValue,\
-        args = "{} {} {} {} {} {} {} {} {} {} {} {}".format(
+        args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
+                 kTrussValue,\
                  graph.n_vertices,graph.n_edges,\
                  graph.directed,graph.weighted,\
                  graph.src.name,graph.dst.name,\
