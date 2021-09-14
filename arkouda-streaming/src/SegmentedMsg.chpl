@@ -6240,7 +6240,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
           //var TriCount=0:[0..Ne-1] int;
           var TriCount=makeDistArray(Ne,bool): int;
-          TriCount=0;
           coforall loc in Locales {
               on loc {
                     var ld = src.localSubdomain();
@@ -6252,7 +6251,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         if ((nei[v1]+neiR[v1])<k-1 || 
                             (nei[v2]+neiR[v2])<k-1) {
                               EdgeDeleted[i]=true;
-                              writeln("We have removed the edge ",i, "=<",v1,",",v2,">");
+                              writeln("For k=",k," We have removed the edge ",i, "=<",v1,",",v2,">");
+                              writeln("Degree of ",v1,"=",nei[v1]+neiR[v1]," Degree of ",v2, "=",nei[v2]+neiR[v2]);
                               // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
                         }
                     }
@@ -6338,7 +6338,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
           //we will try to remove all the unnecessary edges in the graph
           while (KeepCheck) {
-
+              TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
                   on loc {
