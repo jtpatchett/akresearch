@@ -6295,6 +6295,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                  beginE=start_i[v];
                  if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
                        eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
+                 } else {
+                    eid=-1;
                  }
                  if (eid==-1) {// if a
                     beginE=start_iR[u];
@@ -6304,6 +6306,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        var v2=dstR[e];
                        //here we change the edge ID found in reverse array srcR and dstR into the ID of src and dst
                        eid=binSearchE(dst,start_i[v2],start_i[v2]+nei[v2]-1,v1);
+                    } else {
+                      eid=-1;
                     }
                     if (eid==-1) {
                          beginE=start_iR[v];
@@ -6313,6 +6317,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             var v2=dstR[e];
                             //here we change the edge ID found in reverse array srcR and dstR into the ID of src and dst
                             eid=binSearchE(dst,start_i[v2],start_i[v2]+nei[v2]-1,v1);
+                         } else {
+                            eid=-1;
                          }
                     } 
                  }// end of if a
@@ -6352,6 +6358,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             if ((EdgeDeleted[i]==false ) && (nei[u]>0) ){
                                forall x in dst[beginTmp..endTmp] with (ref uadj) {
                                    var  e=findEdge(u,x);
+                                   if (e==-1){
+                                      writeln("vertex ",x," and ",u," findEdge Error");
+                                   }
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
@@ -6361,7 +6370,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             endTmp=beginTmp+neiR[u]-1;
                             if ((EdgeDeleted[i]==false ) && (neiR[u]>0)){
                                forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(u,x);
+                                   var e=findEdge(x,u);
+                                   if (e==-1){
+                                      writeln("vertex ",x," and ",u," findEdge Error");
+                                   }
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
@@ -6374,6 +6386,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             if ((EdgeDeleted[i]==false ) && (nei[v]>0)){
                                forall x in dst[beginTmp..endTmp] with (ref vadj) {
                                    var e=findEdge(v,x);
+                                   if (e==-1){
+                                      writeln("vertex ",x," and ",v," findEdge Error");
+                                   }
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
@@ -6383,7 +6398,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             endTmp=beginTmp+neiR[v]-1;
                             if ((EdgeDeleted[i]==false ) && (neiR[v]>0)){
                                forall x in dstR[beginTmp..endTmp] with (ref vadj) {
-                                   var e=findEdge(v,x);
+                                   var e=findEdge(x,v);
+                                   if (e==-1){
+                                      writeln("vertex ",x," and ",v," findEdge Error");
+                                   }
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
