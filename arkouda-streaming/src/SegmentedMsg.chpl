@@ -6337,53 +6337,70 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
                      var endEdge = ld.high;
-                     var v1:int;
-                     var v2:int;
-                     var uadj = new set(int, parSafe = true);
-                     var vadj = new set(int, parSafe = true);
+                     //var v1:int;
+                     //var v2:int;
+                     writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
+                     //forall i in startEdge..endEdge with (ref uadj, ref vadj) {
                      forall i in startEdge..endEdge {
+                            var uadj = new set(int, parSafe = true);
+                            var vadj = new set(int, parSafe = true);
                             var u = src[i];
                             var v = dst[i];
+                            writeln("Current Edge=",i, "=<",u,",",v,">");
                             var beginTmp=start_i[u];
                             var endTmp=beginTmp+nei[u]-1;
-                            if (EdgeDeleted[i]==false ) {
+                            if ((EdgeDeleted[i]==false ) && (nei[u]>0) ){
                                forall x in dst[beginTmp..endTmp] with (ref uadj) {
                                    var  e=findEdge(u,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
                                }
-                               beginTmp=start_iR[u];
-                               endTmp=beginTmp+neiR[u]-1;
+                            }
+                            beginTmp=start_iR[u];
+                            endTmp=beginTmp+neiR[u]-1;
+                            if ((EdgeDeleted[i]==false ) && (neiR[u]>0)){
                                forall x in dstR[beginTmp..endTmp] with (ref uadj) {
                                    var e=findEdge(u,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
                                    }
                                }
-                               beginTmp=start_i[v];
-                               endTmp=beginTmp+nei[v]-1;
+                            }
+                            writeln("The adjacent vertices of ",u,"->",v," =",uadj);
+                            uadj.remove(u);
+                            beginTmp=start_i[v];
+                            endTmp=beginTmp+nei[v]-1;
+                            if ((EdgeDeleted[i]==false ) && (nei[v]>0)){
                                forall x in dst[beginTmp..endTmp] with (ref vadj) {
                                    var e=findEdge(v,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
                                }
-                               beginTmp=start_iR[v];
-                               endTmp=beginTmp+neiR[v]-1;
+                            }
+                            beginTmp=start_iR[v];
+                            endTmp=beginTmp+neiR[v]-1;
+                            if ((EdgeDeleted[i]==false ) && (neiR[v]>0)){
                                forall x in dstR[beginTmp..endTmp] with (ref vadj) {
                                    var e=findEdge(v,x);
                                    if ((EdgeDeleted[e] ==false) && (x !=u)) {
                                              vadj.add(x);
                                    }
                                }
+                            }
+                            writeln("The adjacent vertices of ",v,"->",u," =",vadj);
+                            vadj.remove(v);
+                            if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
                                var Count=0:int;
                                forall s in uadj with ( + reduce Count) {
                                    if vadj.contains(s) {
                                       Count +=1;
+                                      writeln("The ", Count, " Triangle <",u,",",v,",",s,"> is added");
                                    }
                                }
                                TriCount[i] = Count;
+                               writeln("The number of triangles of edge <",u,",",v," > is ", Count);
                                // here we get the number of triangles of edge ID i
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
@@ -6394,12 +6411,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                      SetCurF.add(e);
                                }
                      }
+                     writeln("Current frontier =",SetCurF);
                      if (SetCurF.isEmpty() ) {
                           KeepCheck=false;
                      }
                      while (!SetCurF.isEmpty()) {
-                           forall i in SetCurF with (ref SetNextF) {
-                              if (xlocal(i,startEdge,endEdge) ) {//each local only check the own edges
+                           forall i in SetCurF with (ref SetNextF,ref KeepCheck) {
+                              if (xlocal(i,startEdge,endEdge) ) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
                                   var nextStart=start_i[v1];
@@ -6542,7 +6560,15 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                   }// end of  forall j in nextStart..nextEnd 
                               } // end if (xlocal(i,startEdge,endEdge) 
                            } // end forall i in SetCurF with (ref SetNextF) 
+                           writeln("Current frontier =",SetCurF);
+                           writeln("next    frontier =",SetNextF);
                            SetCurF<=>SetNextF;
+                           if (SetCurF.isEmpty() ) {
+                               KeepCheck=false;
+                           }
+                           writeln("After Exchange");
+                           writeln("Current frontier =",SetCurF);
+                           writeln("next    frontier =",SetNextF);
                            SetNextF.clear();
                      }// end of while (!SetCurF.isEmpty()) 
                   } //end on loc 
@@ -6847,6 +6873,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       writeln("Success");
       //timer.stop();
+      proc return_tri_edge(): string throws{
+          var TotalCnt=0:[0..0] int;
+          TotalCnt[0]=0;
+          var countName = st.nextName();
+          var countEntry = new shared SymEntry(TotalCnt);
+          st.addEntry(countName, countEntry);
+
+          var cntMsg =  'created ' + st.attrib(countName);
+          return cntMsg;
+
+      }
+      repMsg=return_tri_edge();
       return new MsgTuple(repMsg, MsgType.NORMAL);
   }
 
