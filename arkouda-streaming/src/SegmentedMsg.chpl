@@ -6423,7 +6423,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      }// end of forall. We get the number of triangles for each edge
 
                      KeepCheck=false;
-                     forall e in startEdge..endEdge with(ref SetCurF) {
+                     forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
                                if (TriCount[e] < k-2) {
                                      EdgeDeleted[e] = true;
                                      SetCurF.add(e);
