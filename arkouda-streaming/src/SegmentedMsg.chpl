@@ -6422,10 +6422,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     forall e in startEdge..endEdge with(ref SetCurF) {
+                     KeepCheck=false;
+                     forall e in startEdge..endEdge with(ref SetCurF,ref KTrussFlag) {
                                if (TriCount[e] < k-2) {
                                      EdgeDeleted[e] = true;
                                      SetCurF.add(e);
+                                     KeepCheck=true;
                                }
                      }
                      writeln("Current frontier =",SetCurF);
@@ -6580,9 +6582,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            //writeln("Current frontier =",SetCurF);
                            //writeln("next    frontier =",SetNextF);
                            SetCurF<=>SetNextF;
-                           if (SetCurF.isEmpty() ) {
-                               KeepCheck=false;
-                           }
+                           //if (SetCurF.isEmpty() ) {
+                           //    KeepCheck=false;
+                           //}
                            writeln("After Exchange");
                            writeln("Current frontier =",SetCurF);
                            writeln("next    frontier =",SetNextF);
