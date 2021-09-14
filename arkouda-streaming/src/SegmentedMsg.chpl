@@ -6043,8 +6043,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
   proc segTriEdgeMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {
       var repMsg: string;
-      var (n_verticesN, n_edgesN, directedN, weightedN, restpart )
-          = payload.splitMsgToTuple(5);
+      var (kTrussN,n_verticesN, n_edgesN, directedN, weightedN, restpart )
+          = payload.splitMsgToTuple(6);
+      var kValue=kTrussN:int;
       var Nv=n_verticesN:int;
       var Ne=n_edgesN:int;
       var Directed=directedN:int;
@@ -6228,9 +6229,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     }
                     
                     
-      proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
+      proc kTrussParallel_tmp(k:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
-          var k=4:int;
+          //var k=4:int;
           var KeepCheck=true:bool;
           //var EdgeDeleted=false:[0..Ne-1] bool;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
@@ -6424,9 +6425,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
                      KeepCheck=false;
                      forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
-                               if (TriCount[e] < k-2) {
+                               if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
                                      SetCurF.add(e);
+                                     writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
                                      KeepCheck=true;
                                }
                      }
@@ -6888,7 +6890,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
               //tri_edge_kernel(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            //ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-                kTrussParallel_tmp(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                kTrussParallel_tmp(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       writeln("Success");
       //timer.stop();
