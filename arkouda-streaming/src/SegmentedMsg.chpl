@@ -6251,6 +6251,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         if ((nei[v1]+neiR[v1])<k-1 || 
                             (nei[v2]+neiR[v2])<k-1) {
                               EdgeDeleted[i]=true;
+                              writeln("We have removed the edge ",i, "=<",v1,",",v2,">");
                               // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
                         }
                     }
@@ -6343,16 +6344,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
                      var endEdge = ld.high;
-                     //var v1:int;
-                     //var v2:int;
-                     writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
+                     //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      //forall i in startEdge..endEdge with (ref uadj, ref vadj) {
                      forall i in startEdge..endEdge {
                             var uadj = new set(int, parSafe = true);
                             var vadj = new set(int, parSafe = true);
                             var u = src[i];
                             var v = dst[i];
-                            writeln("Current Edge=",i, "=<",u,",",v,">");
+                            //writeln("Current Edge=",i, "=<",u,",",v,">");
                             var beginTmp=start_i[u];
                             var endTmp=beginTmp+nei[u]-1;
                             if ((EdgeDeleted[i]==false ) && (nei[u]>0) ){
@@ -6379,7 +6378,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    }
                                }
                             }
-                            writeln("The adjacent vertices of ",u,"->",v," =",uadj);
+                            //writeln("The adjacent vertices of ",u,"->",v," =",uadj);
                             uadj.remove(u);
                             beginTmp=start_i[v];
                             endTmp=beginTmp+nei[v]-1;
@@ -6407,7 +6406,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    }
                                }
                             }
-                            writeln("The adjacent vertices of ",v,"->",u," =",vadj);
+                            //writeln("The adjacent vertices of ",v,"->",u," =",vadj);
                             vadj.remove(v);
                             if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
                                var Count=0:int;
@@ -6418,7 +6417,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    }
                                }
                                TriCount[i] = Count;
-                               writeln("The number of triangles of edge <",u,",",v," > is ", Count);
+                               writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
                                // here we get the number of triangles of edge ID i
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
@@ -6578,8 +6577,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                   }// end of  forall j in nextStart..nextEnd 
                               } // end if (xlocal(i,startEdge,endEdge) 
                            } // end forall i in SetCurF with (ref SetNextF) 
-                           writeln("Current frontier =",SetCurF);
-                           writeln("next    frontier =",SetNextF);
+                           //writeln("Current frontier =",SetCurF);
+                           //writeln("next    frontier =",SetNextF);
                            SetCurF<=>SetNextF;
                            if (SetCurF.isEmpty() ) {
                                KeepCheck=false;
