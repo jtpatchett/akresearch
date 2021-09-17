@@ -6380,7 +6380,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                             }
                             //writeln("The adjacent vertices of ",u,"->",v," =",uadj);
-                            uadj.remove(u);
+                            //uadj.remove(u);
                             beginTmp=start_i[v];
                             endTmp=beginTmp+nei[v]-1;
                             if ((EdgeDeleted[i]==false ) && (nei[v]>0)){
@@ -6408,7 +6408,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                             }
                             //writeln("The adjacent vertices of ",v,"->",u," =",vadj);
-                            vadj.remove(v);
+                            //vadj.remove(v);
                             if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
                                var Count=0:int;
                                forall s in uadj with ( + reduce Count) {
@@ -6468,6 +6468,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[j]-=1;//reduce the number of triangles
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
+                                                              writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
                                                           }
                                                        }
@@ -6502,6 +6503,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[j]-=1;
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
+                                                              writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
                                                           }
                                                        }
@@ -6538,6 +6540,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[e1]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
+                                                              writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
                                                           }
                                                        }
@@ -6573,6 +6576,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[e1]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
+                                                              writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
                                                           }
                                                        }
