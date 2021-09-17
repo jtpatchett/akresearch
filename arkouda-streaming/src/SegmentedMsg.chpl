@@ -6441,6 +6441,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               while (!SetCurF.isEmpty()) {
                   coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
                       on loc {
+                           var ld = src.localSubdomain();
+                           var startEdge = ld.low;
+                           var endEdge = ld.high;
                            forall i in SetCurF with (ref SetNextF,ref KeepCheck) {
                               if (xlocal(i,startEdge,endEdge) ) {//each local only check the owned edges
                                   var    v1=src[i];
