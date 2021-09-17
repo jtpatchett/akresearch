@@ -6453,7 +6453,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
 
-          timer.stop();
+          //timer.stop();
           timer.clear();
 
           EdgeDeleted=false;
