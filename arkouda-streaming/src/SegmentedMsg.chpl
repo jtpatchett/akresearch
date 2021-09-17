@@ -6436,7 +6436,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      if (SetCurF.isEmpty() ) {
                           KeepCheck=false;
                      }
-                     while (!SetCurF.isEmpty()) {
+                  }// end of  on loc 
+              } // end of coforall loc in Locales 
+              while (!SetCurF.isEmpty()) {
+                  coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
+                      on loc {
                            forall i in SetCurF with (ref SetNextF,ref KeepCheck) {
                               if (xlocal(i,startEdge,endEdge) ) {//each local only check the owned edges
                                   var    v1=src[i];
@@ -6594,9 +6598,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                               writeln("next    frontier =",SetNextF);
                               SetNextF.clear();
                            }
-                     }// end of while (!SetCurF.isEmpty()) 
-                  } //end on loc 
-              } //end coforall loc in Locales 
+                      } //end on loc 
+                  } //end coforall loc in Locales 
+              }// end of while (!SetCurF.isEmpty()) 
           }// end while (KeepCheck) 
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
