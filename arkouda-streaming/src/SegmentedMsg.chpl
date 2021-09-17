@@ -6433,14 +6433,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
-                                     SetCurF.add(e);
+                                     //SetCurF.add(e);
                                      //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
                                      KeepCheck=true;
                                }
-                     }
-                     //writeln("Current frontier =",SetCurF);
-                     if (SetCurF.isEmpty() ) {
-                          KeepCheck=false;
                      }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
@@ -6656,12 +6652,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                      KeepCheck=true;
                                }
                      }
-                     //writeln("Current frontier =",SetCurF);
-                     if (SetCurF.isEmpty() ) {
-                          KeepCheck=false;
-                     }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
+              //writeln("Current frontier =",SetCurF);
+              if (SetCurF.isEmpty() ) {
+                          KeepCheck=false;
+              }
               while (!SetCurF.isEmpty()) {
                   coforall loc in Locales with ( ref KeepCheck, ref SetCurF, ref SetNextF) {
                       on loc {
@@ -6839,7 +6835,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           for i in RemovedEdge[0..numLocales-1] {
                tmpn+=i;
           }
-          writeln("After Optimization Saved edges=",tmpn);
+          writeln("After Optimization, Total Deleted edges in a chain=",tmpn);
           writeln("Saved number of iterations=",N1-N2);
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
