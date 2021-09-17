@@ -6414,7 +6414,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                forall s in uadj with ( + reduce Count) {
                                    if vadj.contains(s) {
                                       Count +=1;
-                                      writeln("The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                      //writeln("The ", Count, " Triangle <",u,",",v,",",s,"> is added");
                                    }
                                }
                                TriCount[i] = Count;
@@ -6583,14 +6583,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            } // end forall i in SetCurF with (ref SetNextF) 
                            //writeln("Current frontier =",SetCurF);
                            //writeln("next    frontier =",SetNextF);
-                           SetCurF<=>SetNextF;
-                           //if (SetCurF.isEmpty() ) {
-                           //    KeepCheck=false;
-                           //}
-                           writeln("After Exchange");
-                           writeln("Current frontier =",SetCurF);
-                           writeln("next    frontier =",SetNextF);
-                           SetNextF.clear();
+                           if (here.id==0) { 
+                              SetCurF<=>SetNextF;
+                              writeln("After Exchange");
+                              writeln("Current frontier =",SetCurF);
+                              writeln("next    frontier =",SetNextF);
+                              SetNextF.clear();
+                           }
                      }// end of while (!SetCurF.isEmpty()) 
                   } //end on loc 
               } //end coforall loc in Locales 
