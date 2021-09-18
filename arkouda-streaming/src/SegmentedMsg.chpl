@@ -6236,14 +6236,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
           var TriCount=makeDistArray(Ne,bool): int;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
-          var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
+          //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
           var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
           KeepCheck=true;
           EdgeDeleted=false;
-          RemovedEdge=0;
+          var RemovedEdge=0: int;
           TriCount=0;
           var timer:Timer;
 
@@ -6678,8 +6678,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            var ld = src.localSubdomain();
                            var startEdge = ld.low;
                            var endEdge = ld.high;
-                           forall i in SetCurF with ( ref SetNextF) {
-                              if (xlocal(i,startEdge,endEdge) ) {//each local only check the owned edges
+                           forall i in SetCurF with (ref SetNextF) {
+                              if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
                                   var nextStart=start_i[v1];
@@ -6709,7 +6709,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[j]-=1;//reduce the number of triangles
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
-                                                              RemovedEdge[here.id]+=1;
+                                                              //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
                                                           }
@@ -6745,7 +6745,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[j]-=1;
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
-                                                              RemovedEdge[here.id]+=1;
+                                                              //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
                                                           }
@@ -6783,7 +6783,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[e1]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
-                                                              RemovedEdge[here.id]+=1;
+                                                              //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
                                                           }
@@ -6820,7 +6820,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                           TriCount[e1]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
-                                                              RemovedEdge[here.id]+=1;
+                                                              //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
                                                           }
@@ -6834,6 +6834,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            //writeln("next    frontier =",SetNextF);
                       } //end on loc 
                   } //end coforall loc in Locales 
+                  RemoveEdge+=SetNextF.SetNextF.getSize();
                   SetCurF<=>SetNextF;
                   SetNextF.clear();
                   //writeln("After Exchange");
@@ -6845,11 +6846,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           writeln("After Optimization,Total execution time=",timer.elapsed());
           writeln("After Optimization,Total number of iterations =",N2);
-          var tmpn=0:int;
-          for i in RemovedEdge[0..numLocales-1] {
-               tmpn+=i;
-          }
-          writeln("After Optimization, Total Deleted edges in a chain=",tmpn);
+          //var tmpn=0:int;
+          //for i in RemovedEdge[0..numLocales-1] {
+          //     tmpn+=i;
+          //}
+          writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
           writeln("Saved number of iterations=",N1-N2);
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
