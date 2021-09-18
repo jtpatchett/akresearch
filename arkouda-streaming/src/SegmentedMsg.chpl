@@ -6237,9 +6237,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var TriCount=makeDistArray(Ne,bool): int;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
           var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
-          var KeepCheck=true:bool;
+          var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
           var N1=0:int;
           var N2=0:int;
+          var ConFlag=true:bool;
+          KeepCheck=true;
           EdgeDeleted=false;
           RemovedEdge=0;
           TriCount=0;
@@ -6344,11 +6346,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           }
 
           //we will try to remove all the unnecessary edges in the graph
-          while (KeepCheck) {
+          //while (KeepCheck) {
+          while (ConFlag) {
               KeepCheck=false;
+              ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
-              coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
+              coforall loc in Locales with (ref SetCurF, ref SetNextF) {
                   on loc {
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
@@ -6431,17 +6435,22 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
+                     forall e in startEdge..endEdge with(ref SetCurF) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
                                      //SetCurF.add(e);
                                      //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
-                                     KeepCheck=true;
+                                     KeepCheck[here.id]=true;
                                }
                      }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
+              for i in KeepCheck[0..numLocales-1] {
+                   if KeepCheck[i] {
+                      ConFlag=true;
+                   }
+              }
           }// end while (KeepCheck) 
           timer.stop();
           writeln("Before Optimization Total time=",timer.elapsed() );
@@ -6558,12 +6567,15 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           }
           */
           //we will try to remove all the unnecessary edges in the graph
-          KeepCheck=true;
-          while (KeepCheck) {
-              KeepCheck=false;
+          //KeepCheck=true;
+          ConFlag=true;
+          //while (KeepCheck) {
+          while (ConFlag) {
+              //KeepCheck=false;
+              ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
-              coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
+              coforall loc in Locales with (ref SetCurF, ref SetNextF) {
                   on loc {
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
@@ -6646,27 +6658,27 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
+                     forall e in startEdge..endEdge with(ref SetCurF) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
                                      SetCurF.add(e);
                                      //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
-                                     KeepCheck=true;
+                                     //KeepCheck[here.id]=true;
                                }
                      }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               //writeln("Current frontier =",SetCurF);
               if (SetCurF.isEmpty() ) {
-                          KeepCheck=false;
+                      ConFlag=false;
               }
               while (!SetCurF.isEmpty()) {
-                  coforall loc in Locales with ( ref KeepCheck, ref SetCurF, ref SetNextF) {
+                  coforall loc in Locales with ( ref SetCurF, ref SetNextF) {
                       on loc {
                            var ld = src.localSubdomain();
                            var startEdge = ld.low;
                            var endEdge = ld.high;
-                           forall i in SetCurF with ( ref SetNextF,ref KeepCheck) {
+                           forall i in SetCurF with ( ref SetNextF) {
                               if (xlocal(i,startEdge,endEdge) ) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
