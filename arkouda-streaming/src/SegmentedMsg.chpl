@@ -6572,7 +6572,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //while (KeepCheck) {
           while (ConFlag) {
               //KeepCheck=false;
-              ConFlag=false;
+              //ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref SetCurF, ref SetNextF) {
@@ -6834,7 +6834,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            //writeln("next    frontier =",SetNextF);
                       } //end on loc 
                   } //end coforall loc in Locales 
-                  RemoveEdge+=SetNextF.SetNextF.getSize();
+                  RemovedEdge+=SetNextF.getSize();
                   SetCurF<=>SetNextF;
                   SetNextF.clear();
                   //writeln("After Exchange");
