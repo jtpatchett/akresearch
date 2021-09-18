@@ -6438,19 +6438,23 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      forall e in startEdge..endEdge with(ref SetCurF) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
-                                     //SetCurF.add(e);
+                                     SetCurF.add(e);
                                      //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
-                                     KeepCheck[here.id]=true;
+                                     //KeepCheck[here.id]=true;
                                }
                      }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
-              for i in KeepCheck[0..numLocales-1] {
-                   if KeepCheck[i] {
+              if SetCurF.isEmpty() {
                       ConFlag=true;
-                   }
               }
+              SetCurF.clear();
+              //for i in KeepCheck[0..numLocales-1] {
+              //     if KeepCheck[i] {
+              //        ConFlag=true;
+              //     }
+              //}
           }// end while (KeepCheck) 
           timer.stop();
           writeln("Before Optimization Total time=",timer.elapsed() );
@@ -6461,9 +6465,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           EdgeDeleted=false;
-          TriCount=0;
-          SetCurF.clear();
-          SetNextF.clear();
+          //TriCount=0;
+          //SetCurF.clear();
+          //SetNextF.clear();
 
           //second test for optimized version
           timer.clear();
