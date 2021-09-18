@@ -6348,7 +6348,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //we will try to remove all the unnecessary edges in the graph
           //while (KeepCheck) {
           while (ConFlag) {
-              KeepCheck=false;
+              //KeepCheck=false;
               ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
@@ -6446,7 +6446,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
-              if SetCurF.isEmpty() {
+              if (!SetCurF.isEmpty()) {
                       ConFlag=true;
               }
               SetCurF.clear();
