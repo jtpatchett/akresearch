@@ -6232,19 +6232,20 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
       proc kTrussParallel_tmp(k:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
           //var k=4:int;
-          var KeepCheck=true:bool;
-          //var EdgeDeleted=false:[0..Ne-1] bool;
-          var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
-          //var TriCount=0:[0..Ne-1] int;
-          var RemovedEdge=0: [0..numLocales-1] int;
+          var TriCount=makeDistArray(Ne,bool): int;
+          var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
+          var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
+          var KeepCheck=true:bool;
           var N1=0:int;
           var N2=0:int;
-          var TriCount=makeDistArray(Ne,bool): int;
           EdgeDeleted=false;
+          RemovedEdge=0;
           TriCount=0;
           var timer:Timer;
+
+          //here we begin the first version
           timer.start();
           coforall loc in Locales {
               on loc {
@@ -6344,6 +6345,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
           //we will try to remove all the unnecessary edges in the graph
           while (KeepCheck) {
+              KeepCheck=false;
               TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
@@ -6429,7 +6431,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     KeepCheck=false;
                      forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
@@ -6449,13 +6450,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
 
-          //timer.stop();
-          timer.clear();
 
           EdgeDeleted=false;
           TriCount=0;
+          SetCurF.clear();
+          SetNextF.clear();
 
-          //second test
+          //second test for optimized version
+          timer.clear();
           timer.start();
           coforall loc in Locales {
               on loc {
@@ -6558,6 +6560,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //we will try to remove all the unnecessary edges in the graph
           KeepCheck=true;
           while (KeepCheck) {
+              KeepCheck=false;
               TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref KeepCheck, ref SetCurF, ref SetNextF) {
@@ -6643,7 +6646,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     KeepCheck=false;
                      forall e in startEdge..endEdge with(ref SetCurF,ref KeepCheck) {
                                if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
                                      EdgeDeleted[e] = true;
