@@ -6241,7 +6241,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
-          KeepCheck=true;
+          //KeepCheck=true;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
           TriCount=0;
@@ -6352,14 +6352,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
-              coforall loc in Locales with (ref SetCurF, ref SetNextF) {
+              coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
                      var endEdge = ld.high;
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      //forall i in startEdge..endEdge with (ref uadj, ref vadj) {
-                     forall i in startEdge..endEdge {
+                     forall i in startEdge..endEdge with(ref SetCurF){
                             var uadj = new set(int, parSafe = true);
                             var vadj = new set(int, parSafe = true);
                             var u = src[i];
@@ -6430,19 +6430,25 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    }
                                }
                                TriCount[i] = Count;
+                               if (TriCount[i] < k-2) {
+                                     EdgeDeleted[i] = true;
+                                     SetCurF.add(i);
+                                     //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
+                                     //KeepCheck[here.id]=true;
+                               }
                                //writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
                                // here we get the number of triangles of edge ID i
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     forall e in startEdge..endEdge with(ref SetCurF) {
-                               if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
-                                     EdgeDeleted[e] = true;
-                                     SetCurF.add(e);
+                     //forall e in startEdge..endEdge with(ref SetCurF) {
+                     //          if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
+                     //                EdgeDeleted[e] = true;
+                     //                SetCurF.add(e);
                                      //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
                                      //KeepCheck[here.id]=true;
-                               }
-                     }
+                     //          }
+                     //}
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
