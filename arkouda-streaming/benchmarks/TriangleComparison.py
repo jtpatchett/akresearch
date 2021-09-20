@@ -16,6 +16,7 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("directed graph  ={}".format(Graph.directed))
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
+    '''
     print("weighted graph  ={}".format(Graph.weighted))
     print("source of edges   ={}".format(Graph.src))
     print("dest of edges     ={}".format(Graph.dst))
@@ -27,10 +28,10 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("neighbour R   ={}".format(Graph.neighbourR))
     print("neighbour size={}".format(Graph.neighbour.size))
     print("from src to dst")
+    '''
 
     testval2 = ak.pdarraycreation.graph_triangle_edge(Graph)
     return testval2;
-    return 0;
 
 if __name__ == '__main__':
     print(sys.argv)

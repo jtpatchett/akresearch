@@ -6234,16 +6234,16 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //var k=4:int;
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag(int,Locales); //use bag to keep the next frontier
-          var TriCount=makeDistArray(Ne,bool): int;
           var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
           //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
-          var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
+          //var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
           //KeepCheck=true;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
+          var TriCount=makeDistArray(Ne,bool): int;
           TriCount=0;
           var timer:Timer;
 
@@ -6452,7 +6452,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
-              if (!SetCurF.isEmpty()) {
+              //if (!SetCurF.isEmpty()) {
+              if ( SetCurF.getSize()>0){
                       ConFlag=true;
               }
               SetCurF.clear();
@@ -6582,7 +6583,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //while (KeepCheck) {
           while (ConFlag) {
               //KeepCheck=false;
-              //ConFlag=false;
+              ConFlag=false;
               TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref SetCurF, ref SetNextF) {
@@ -6679,8 +6680,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               //writeln("Current frontier =",SetCurF);
-              if (SetCurF.isEmpty() ) {
-                      ConFlag=false;
+              //if (!SetCurF.isEmpty()) {
+              if ( SetCurF.getSize()>0){
+                      ConFlag=true;
               }
               while (!SetCurF.isEmpty()) {
                   coforall loc in Locales with ( ref SetCurF, ref SetNextF) {
@@ -6717,11 +6719,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                    if (tmpe!=-1) {// there is such third edge
                                                        if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
                                                           TriCount[j]-=1;//reduce the number of triangles
+                                                          TriCount[tmpe]-=1;//reduce the number of triangles
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
                                                               //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
+                                                          }
+                                                          if (TriCount[tmpe]<k-2) {
+                                                              EdgeDeleted[tmpe]=true;
+                                                              //RemovedEdge[here.id]+=1;
+                                                              //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
+                                                              SetNextF.add(tmpe);
                                                           }
                                                        }
                                                    }
@@ -6753,11 +6762,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==false) {
                                                           TriCount[j]-=1;
+                                                          TriCount[tmpe]-=1;
                                                           if (TriCount[j]<k-2) {
                                                               EdgeDeleted[j]=true;
                                                               //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
                                                               SetNextF.add(j);
+                                                          }
+                                                          if (TriCount[tmpe]<k-2) {
+                                                              EdgeDeleted[tmpe]=true;
+                                                              //RemovedEdge[here.id]+=1;
+                                                              //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
+                                                              SetNextF.add(tmpe);
                                                           }
                                                        }
                                                    }
@@ -6791,11 +6807,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==false) {
                                                           TriCount[e1]-=1;
+                                                          TriCount[tmpe]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
                                                               //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
+                                                          }
+                                                          if (TriCount[tmpe]<k-2) {
+                                                              EdgeDeleted[tmpe]=true;
+                                                              //RemovedEdge[here.id]+=1;
+                                                              //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
+                                                              SetNextF.add(tmpe);
                                                           }
                                                        }
                                                    }
@@ -6828,11 +6851,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==false) {
                                                           TriCount[e1]-=1;
+                                                          TriCount[tmpe]-=1;
                                                           if (TriCount[e1]<k-2) {
                                                               EdgeDeleted[e1]=true;
                                                               //RemovedEdge[here.id]+=1;
                                                               //writeln("Once Iteration, we removed edge ",e1,"=<",src[e1],",",dst[e1]," >");
                                                               SetNextF.add(e1);
+                                                          }
+                                                          if (TriCount[tmpe]<k-2) {
+                                                              EdgeDeleted[tmpe]=true;
+                                                              //RemovedEdge[here.id]+=1;
+                                                              //writeln("Once Iteration, we removed edge ",j,"=<",src[j],",",dst[j]," >");
+                                                              SetNextF.add(tmpe);
                                                           }
                                                        }
                                                    }
