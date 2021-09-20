@@ -6076,13 +6076,19 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //Pass each edge to a locale
           //Within each locale iterate on the left or the right. 
           //
-          writeln("Sweet");
-          
+          var Iterations=0:int;
+          var k = 4:int;
           ref srcRef = src;
           ref dstRef = dst;
           var forwardVertice:int;
           var reverseVertice:int;
+          var ConFlag=0:int;
+          ConFlag = 1;
+          var EdgeFlag = 0:[0..Ne-1] int;
           
+          while (ConFlag == 1) {
+          Iterations +=1;
+          ConFlag = 0;
           for i in 0..Ne-1 { //begin edge iteration
               forwardVertice=src[i];
               reverseVertice=dst[i];
@@ -6092,8 +6098,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               tricount=0;
               writeln(forwardVertice, ",", reverseVertice); 
           //Get current edge: Big candidate for parallelization
-          
+              if (EdgeFlag[i] != -1) {
               for u in 0..Ne-1 { //begin edgelist iteration
+                  if (EdgeFlag[u] != -1) {
                   if (srcRef[u] == forwardVertice) {
                       uadj.add(dstRef[u]); 
                   
@@ -6101,13 +6108,16 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   if (srcRef[u] == reverseVertice) {
                       vadj.add(dstRef[u]);
                       } 
+                      }
                   }//end edgelist iteration
               for v in 0..Ne-1 {//begin reverse edgelist iteration
+                  if (EdgeFlag[v] != -1) {
                   if (dstRef[v] == forwardVertice) {
                       uadj.add(srcRef[v]);
                       }
                   if (dstRef[v] == reverseVertice) {
                       vadj.add(srcRef[v]);
+                      }
                       }
                   }
               for u in uadj {
@@ -6116,8 +6126,23 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       }
                   }
                   EdgeCnt[i] = tricount;
+                  }
               }//end edge iteration
+              
+              
+          //writeln(EdgeCnt);
+          
+          for i in 0..Ne-1 {
+              if (EdgeCnt[i] < k-2 && EdgeCnt[i] > 0) {
+                  EdgeCnt[i] -= 1;
+                  ConFlag = 1;
+                  EdgeFlag[i] = -1;
+                  
+              }
+          }
+          }
           writeln(EdgeCnt);
+          writeln("Number of Iterations: ", Iterations);
           return "Yay";   
           }
           
@@ -6441,14 +6466,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }// end of if (EdgeDeleterd[i]==false ) 
                      }// end of forall. We get the number of triangles for each edge
 
-                     //forall e in startEdge..endEdge with(ref SetCurF) {
-                     //          if ((EdgeDeleted[e]==false) && (TriCount[e] < k-2)) {
-                     //                EdgeDeleted[e] = true;
-                     //                SetCurF.add(e);
-                                     //writeln("We removed edge ",e,"=<",src[e],",",dst[e]," >");
-                                     //KeepCheck[here.id]=true;
-                     //          }
-                     //}
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               N1+=1;
@@ -6847,9 +6864,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   RemovedEdge+=SetNextF.getSize();
                   SetCurF<=>SetNextF;
                   SetNextF.clear();
-                  //writeln("After Exchange");
-                  //writeln("Current frontier =",SetCurF);
-                  //writeln("next    frontier =",SetNextF);
+                  writeln("After Exchange");
+                  writeln("Current frontier =",SetCurF);
+                  writeln("next    frontier =",SetNextF);
               }// end of while (!SetCurF.isEmpty()) 
               N2+=1;
           }// end while (KeepCheck) 
@@ -6864,6 +6881,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           writeln("Saved number of iterations=",N1-N2);
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
+        
+        
+        
                     
         proc kTrussInitVTwo(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
@@ -7155,8 +7175,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       srcRN,dstRN, startRN,neighbourRN,
                       st);
 
-              //tri_edge_kernel(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
-                           //ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+              tri_edge_kernel(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                           ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
                 kTrussParallel_tmp(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       writeln("Success");
