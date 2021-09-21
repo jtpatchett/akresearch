@@ -6096,7 +6096,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               var vadj = new set(int, parSafe = true);
               var tricount:int;
               tricount=0;
-              writeln(forwardVertice, ",", reverseVertice); 
+              //writeln(forwardVertice, ",", reverseVertice); 
           //Get current edge: Big candidate for parallelization
               if (EdgeFlag[i] != -1) {
               for u in 0..Ne-1 { //begin edgelist iteration
@@ -6133,7 +6133,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //writeln(EdgeCnt);
           
           for i in 0..Ne-1 {
-              if (EdgeCnt[i] < k-2 && EdgeCnt[i] > 0) {
+              if ((EdgeCnt[i] < k-2) && (EdgeCnt[i] > 0) && (EdgeFlag[i]==0)) {
                   EdgeCnt[i] -= 1;
                   ConFlag = 1;
                   EdgeFlag[i] = -1;
@@ -6141,8 +6141,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
           }
           }
-          writeln(EdgeCnt);
+          //writeln(EdgeCnt);
           writeln("Number of Iterations: ", Iterations);
+       
+          for i in 0..Ne-1 {
+              if EdgeFlag[i]==-1 {
+                  writeln("remove edge ",i);
+              }
+          }
           return "Yay";   
           }
           
@@ -6446,7 +6452,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }
                             //writeln("The adjacent vertices of ",v,"->",u," =",vadj);
                             //vadj.remove(v);
-                            if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
+                            //if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
+                            if ((EdgeDeleted[i]==false) ){
                                var Count=0:int;
                                forall s in uadj with ( + reduce Count) {
                                    if vadj.contains(s) {
@@ -6483,6 +6490,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           writeln("Before Optimization Total time=",timer.elapsed() );
           writeln("Before Optimization Total number of iterations=",N1);
+          for i in 0..Ne-1 {
+              if EdgeDeleted[i] {
+                  writeln("remove edge ",i);
+              }
+          }
 
 
 
@@ -6672,7 +6684,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                             }
                             //writeln("The adjacent vertices of ",v,"->",u," =",vadj);
                             //vadj.remove(v);
-                            if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
+                            //if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
+                            if ((EdgeDeleted[i]==false) ){
                                var Count=0:int;
                                forall s in uadj with ( + reduce Count) {
                                    if vadj.contains(s) {
@@ -6909,6 +6922,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //}
           writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
           writeln("Saved number of iterations=",N1-N2);
+          for i in 0..Ne-1 {
+              if EdgeDeleted[i] {
+                  writeln("remove edge ",i);
+              }
+          }
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
         
