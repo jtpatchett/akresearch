@@ -6339,23 +6339,29 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        return -1;
               }// end of proc
 
+              if (u==v) {
+                    return -1;
+                    // we do not accept self-loop
+              }
               var beginE=start_i[u];
               var eid:int;
-              if (v>=dst[beginE] && v<=dst[beginE+nei[u]-1]) {
+              if ( (beginE>=0) && (v>=dst[beginE]) && (v<=dst[beginE+nei[u]-1]) )  {
                        eid=binSearchE(dst,beginE,beginE+nei[u]-1,v);
               } else {
                 eid=-1;
               }
               if (eid==-1) {// if b
                  beginE=start_i[v];
-                 if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                 //if (u>=dst[beginE] && u<=dst[beginE+nei[v]-1]) {
+                 if ( (beginE>=0) && (u>=dst[beginE]) && (u<=dst[beginE+nei[v]-1]) )  {
                        eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
                  } else {
                     eid=-1;
                  }
                  if (eid==-1) {// if a
                     beginE=start_iR[u];
-                    if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                    //if (v>=dstR[beginE] && v<=dstR[beginE+neiR[u]-1]) {
+                    if ( (beginE>=0) && (v>=dstR[beginE]) && (v<=dstR[beginE+neiR[u]-1]) )  {
                        var e=binSearchE(dstR,beginE,beginE+neiR[u]-1,v);
                        var v1=srcR[e];
                        var v2=dstR[e];
@@ -6366,7 +6372,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     }
                     if (eid==-1) {
                          beginE=start_iR[v];
-                         if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                         //if (u>=dstR[beginE] && u<=dstR[beginE+neiR[v]-1]) {
+                         if ( (beginE>=0) && (u>=dstR[beginE]) && (u<=dstR[beginE+neiR[v]-1]) )  {
                             var e=binSearchE(dstR,beginE,beginE+neiR[v]-1,u);
                             var v1=srcR[e];
                             var v2=dstR[e];
@@ -6387,7 +6394,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           while (ConFlag) {
               //KeepCheck=false;
               //ConFlag=false;
-              TriCount=0;
+              //TriCount=0;
               // first we calculate the number of triangles
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
@@ -6397,6 +6404,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
                      forall i in startEdge..endEdge with(ref SetCurF){
+                            TriCount[i]=0;
                             var uadj = new set(int, parSafe = true);
                             var vadj = new set(int, parSafe = true);
                             var u = src[i];
@@ -6428,7 +6436,22 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    }
                                }
                             }
+                            
                             //writeln("The adjacent vertices of ",u,"->",v," =",uadj);
+                            if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty() )){
+                               var Count=0:int;
+                               forall s in uadj with ( + reduce Count) {
+                                   var e=findEdge(s,v);
+                                   if ( (e!=-1) && (EdgeDeleted[e]==false) ) {
+                                      Count +=1;
+                                      //writeln("The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                   }
+                               }
+                               TriCount[i] = Count;
+                               //writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                               // here we get the number of triangles of edge ID i
+                            }// end of if (EdgeDeleterd[i]==false ) 
+                            /*
                             beginTmp=start_i[v];
                             endTmp=beginTmp+nei[v]-1;
                             if ((EdgeDeleted[i]==false ) && (nei[v]>0)){
@@ -6469,6 +6492,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                //writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
                                // here we get the number of triangles of edge ID i
                             }// end of if (EdgeDeleterd[i]==false ) 
+                            */
                      }// end of forall. We get the number of triangles for each edge
                   }// end of  on loc 
               } // end of coforall loc in Locales 
@@ -6494,7 +6518,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               if ( SetCurF.getSize()<=0){
                       ConFlag=false;
               } else {
-                      writeln("Iteration ", N1," ", SetCurF.getSize(), " Edges have been removed");
+                      //writeln("Iteration ", N1," ", SetCurF.getSize(), " Edges have been removed");
               }
               SetCurF.clear();
               //for i in KeepCheck[0..numLocales-1] {
@@ -6513,7 +6537,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   tmpi+=1;
               }
           }
-          writeln("totally remove  ",tmpi, " edges ");
+          writeln("Before optimization totally removed  ",tmpi, " edges ");
 
 
 
@@ -6674,7 +6698,21 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                             }
                             //writeln("The adjacent vertices of ",u,"->",v," =",uadj);
-                            //uadj.remove(u);
+                            if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty() )){
+                               var Count=0:int;
+                               forall s in uadj with ( + reduce Count) {
+                                   var e=findEdge(s,v);
+                                   if ( (e!=-1) && (EdgeDeleted[e]==false) ) {
+                                      Count +=1;
+                                      //writeln("The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                   }
+                               }
+                               TriCount[i] = Count;
+                               //writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                               // here we get the number of triangles of edge ID i
+                            }// end of if (EdgeDeleterd[i]==false ) 
+
+                            /*
                             beginTmp=start_i[v];
                             endTmp=beginTmp+nei[v]-1;
                             if ((EdgeDeleted[i]==false ) && (nei[v]>0)){
@@ -6702,7 +6740,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                }
                             }
                             //writeln("The adjacent vertices of ",v,"->",u," =",vadj);
-                            //vadj.remove(v);
                             //if ((EdgeDeleted[i]==false) ){
                             if ((EdgeDeleted[i]==false)&& (! uadj.isEmpty())&&(!vadj.isEmpty())){
                                var Count=0:int;
@@ -6716,6 +6753,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                //writeln("The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
                                // here we get the number of triangles of edge ID i
                             }// end of if (EdgeDeleterd[i]==false ) 
+                            */
                      }// end of forall. We get the number of triangles for each edge
                   }// end of  on loc 
               } // end of coforall loc in Locales 
@@ -6950,11 +6988,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   //writeln("remove the ",tmpi, " edge ",i);
                   tmpi+=1;
               } else {
-                  writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
+                  //writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
               }
 
           }
-          writeln("totally remove ",tmpi, " edge");
+          writeln("Optimized version totally removed ",tmpi, " edges");
 
           return "completed";
         } // end of proc kTrussParallel_tmp(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
