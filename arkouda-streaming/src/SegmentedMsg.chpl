@@ -6726,7 +6726,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                               // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
                               // we also remove the self-loop like <v,v>
                               if (v1==v2) {
-                                   //writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
+                                   writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
                               }
                         }
                         if (EdgeDeleted[i]==false) {
