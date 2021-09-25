@@ -6327,7 +6327,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                } else {
                    if (u>v) {
-                      DupE=binSearchE(dst,start_i[v],start_i[v]+nei[v]-1,u);
+                      if (nei[v]<=0) {
+                         DupE=-1;
+                      } else {
+                         DupE=binSearchE(dst,start_i[v],start_i[v]+nei[v]-1,u);
+                      }
                       if (DupE!=-1) {
                            EdgeDeleted[cur]=true;
                            writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
@@ -6620,13 +6624,17 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                var DupE=binSearchE(dst,start_i[u],cur-1,v);
                if (DupE!=-1) {
                     EdgeDeleted[cur]=true;
-                    writeln("Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                    writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                } else {
                    if (u>v) {
-                      DupE=binSearchE(dst,start_i[v],start_i[v]+nei[v]-1,u);
+                      if (nei[v]<=0) {
+                         DupE=-1;
+                      } else {
+                         DupE=binSearchE(dst,start_i[v],start_i[v]+nei[v]-1,u);
+                      }
                       if (DupE!=-1) {
                            EdgeDeleted[cur]=true;
-                           writeln("Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                           writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                       }
                    }
                }
@@ -6700,7 +6708,40 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           EdgeDeleted=false;
           timer.start();
 
-
+          coforall loc in Locales {
+              on loc {
+                    var ld = src.localSubdomain();
+                    var startEdge = ld.low;
+                    var endEdge = ld.high;
+                    forall i in startEdge..endEdge {
+                        var v1=src[i];
+                        var v2=dst[i];
+                        if (  (nei[v1]+neiR[v1])<k-1  || 
+                             ((nei[v2]+neiR[v2])<k-1) || (v1==v2)) {
+                            //we will delete all the edges connected with a vertex only has very small degree 
+                            //(less than k-1)
+                              EdgeDeleted[i]=true;
+                              //writeln("For k=",k," We have removed the edge ",i, "=<",v1,",",v2,">");
+                              //writeln("Degree of ",v1,"=",nei[v1]+neiR[v1]," Degree of ",v2, "=",nei[v2]+neiR[v2]);
+                              // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
+                              // we also remove the self-loop like <v,v>
+                              if (v1==v2) {
+                                   //writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
+                              }
+                        }
+                        if (EdgeDeleted[i]==false) {
+                             var DupE= FindDuplicatedEdges(i);
+                             if (DupE!=-1) {
+                                  //writeln("My locale=",here.id, " Find duplicated edges ",i,"=<",src[i],",",dst[i],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                                  if (!EdgeDeleted[i]) {
+                                          writeln("My locale=",here.id, " before assignment edge ",i," has not been set as true");
+                                  }
+                                  EdgeDeleted[i]=true;
+                             }
+                        }
+                    }
+              }        
+          }// end of coforall loc        
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -7005,7 +7046,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               } else {
                   //writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
               }
-
           }
           writeln("Optimized version totally removed ",tmpi, " edges");
           return "completed";
