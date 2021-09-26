@@ -44,3 +44,8 @@ if __name__ == '__main__':
     run_test(ak_server, graph_loc, num_edges, num_verts, num_cols, directed)
     
     
+'''
+python TriangleComparison.py  tcp://node678:5555 /home/z/zd4/ArkoudaExtension/arkouda/delaunay_n10.gr 3056 1024 2 0
+python TriangleComparison.py  tcp://node678:5555 /home/z/zd4/ArkoudaExtension/arkouda/email-Enron.gr 367662 36692  2 0
+python TriangleComparison.py  tcp://node678:5555 /home/z/zd4/ArkoudaExtension/arkouda/100-1.gr 41 10  2 0
+'''
