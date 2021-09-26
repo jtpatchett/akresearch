@@ -6315,26 +6315,38 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var timer:Timer;
 
           proc RemoveDuplicatedEdges( cur: int):int {
-
-               if ((cur<D3.low) || (cur >D3.high)) {
+               if ((cur<D3.low) || (cur >D3.high) || (cur==0)) {
+                    return -1;
+               }
+               if (cur==0) {
                     return -1;
                }
                var u=src[cur]:int;
                var v=dst[cur]:int;
-               var DupE=binSearchE(dst,start_i[u],cur-1,v);
+               var lu=start_i[u]:int;
+               var nu=nei[u]:int;
+               var lv=start_i[v]:int;
+               var nv=nei[v]:int;
+               var DupE:int;
+               if ((nu<=1) || (cur<=lu)) {
+                   DupE=-1;
+               } else {
+                   
+                   DupE =binSearchE(dst,lu,cur-1,v);
+               }
                if (DupE!=-1) {
                     EdgeDeleted[cur]=true;
-                    writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                    writeln("In function 1 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                } else {
                    if (u>v) {
-                      if (nei[v]<=0) {
+                      if (nv<=0) {
                          DupE=-1;
                       } else {
-                         DupE=binSearchE(dst,start_i[v],start_i[v]+nei[v]-1,u);
+                         DupE=binSearchE(dst,lv,lv+nv-1,u);
                       }
                       if (DupE!=-1) {
                            EdgeDeleted[cur]=true;
-                           writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                           writeln("In function 2 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                       }
                    }
                }
@@ -6578,18 +6590,21 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var timer:Timer;
 
 
-
           proc RemoveDuplicatedEdges( cur: int):int {
-
-               if ((cur<D3.low) || (cur >D3.high)) {
+               if ((cur<D3.low) || (cur >D3.high) || (cur==0)) {
                     return -1;
                }
                var u=src[cur]:int;
                var v=dst[cur]:int;
-               var DupE=binSearchE(dst,start_i[u],cur-1,v);
+               var DupE:int;
+               if ((nei[u]<=1) || (cur<=start_i[u])) {
+                   DupE=-1;
+               } else {
+                   DupE =binSearchE(dst,start_i[u],cur-1,v);
+               }
                if (DupE!=-1) {
                     EdgeDeleted[cur]=true;
-                    writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                    writeln("In function 1 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                } else {
                    if (u>v) {
                       if (nei[v]<=0) {
@@ -6599,7 +6614,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       }
                       if (DupE!=-1) {
                            EdgeDeleted[cur]=true;
-                           writeln("In function  Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                           writeln("In function 2 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
                       }
                    }
                }
@@ -6788,7 +6803,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                if ((EdgeDeleted[i]==false) && (TriCount[i] < k-2)) {
                                      EdgeDeleted[i] = true;
                                      SetCurF.add(i);
-                                     //writeln("10 My Locale=",here.id," removed edge ",i,"=<",src[i],",",dst[i]," > Triangles=",TriCount[i], " in iteration=",N1);
+                                     //writeln("10 My Locale=",here.id," removed edge ",i,"=<",src[i],",",dst[i]," > Triangles=",TriCount[i], " in iteration=",N2);
                                      //KeepCheck[here.id]=true;
                                }
                      }

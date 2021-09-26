@@ -16,8 +16,13 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("directed graph  ={}".format(Graph.directed))
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
-    '''
     print("weighted graph  ={}".format(Graph.weighted))
+    '''
+    for i in range(3020,3056) :
+         print(i,"=<",Graph.src[i]," -- ", Graph.dst[i],">")
+    print("vertex, neighbour, start")
+    for i in range(int(Graph.n_vertices)):
+         print("<",i,"--", Graph.neighbour[i],"--", Graph.start_i[i], ">")
     print("source of edges   ={}".format(Graph.src))
     print("dest of edges     ={}".format(Graph.dst))
     print("start     ={}".format(Graph.start_i))
