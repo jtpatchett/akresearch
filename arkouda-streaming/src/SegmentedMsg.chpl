@@ -6445,10 +6445,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                forall x in dst[beginTmp..endTmp] with (ref uadj) {
                                    var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
                                    if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error");
-                                   }
-                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
+                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                   } else {
+                                      if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
+                                      }
                                    }
                                }
                             }
@@ -6458,10 +6459,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                forall x in dstR[beginTmp..endTmp] with (ref uadj) {
                                    var e=findEdge(x,u);
                                    if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error");
-                                   }
-                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
+                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                   } else {
+                                      if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
+                                      }
                                    }
                                }
                             }
@@ -6713,9 +6715,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
                                    if (e==-1){
                                       //writeln("vertex ",x," and ",u," findEdge Error");
-                                   }
-                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
+                                   } else {
+                                      if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
+                                      }
                                    }
                                }
                             }
@@ -6726,9 +6729,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    var e=findEdge(x,u);
                                    if (e==-1){
                                       //writeln("vertex ",x," and ",u," findEdge Error");
-                                   }
-                                   if ((EdgeDeleted[e] ==false) && (x !=v)) {
+                                   } else {
+                                       if ((EdgeDeleted[e] ==false) && (x !=v)) {
                                              uadj.add(x);
+                                       }
                                    }
                                }
                             }
