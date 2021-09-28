@@ -12,7 +12,6 @@ import sys
 def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, directed):
     ak.connect(connect_url=ak_server)
     Graph = ak.graph_file_read(num_edges,num_vertices,num_cols, directed, graph_location)
-#testval2 = ak.pdarraycreation.graph_triangle(graph)
     print("directed graph  ={}".format(Graph.directed))
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
@@ -35,7 +34,7 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("from src to dst")
     '''
 
-    testval2 = ak.pdarraycreation.graph_triangle_edge(Graph)
+    testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,4)
     return testval2;
 
 if __name__ == '__main__':

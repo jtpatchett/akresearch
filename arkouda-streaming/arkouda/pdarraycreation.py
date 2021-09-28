@@ -1259,9 +1259,8 @@ def graph_triangle (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW]) -> pdarray:
         #return (levelary,vertexary)
         
 @typechecked
-def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW]) -> pdarray:
+def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pdarray:
         #(Ne:int, Nv:int,Ncol:int,directed:int, filename: str)
-        print("Yay pip3 actually worked")
         """
         This function will return the number of triangles in a static graph for each edge
         Returns
@@ -1282,7 +1281,7 @@ def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW]) -> pdarr
         cmd="segmentedGraphTriEdge"
         #Change this for Chapel
         #if (cast(int,graph.directed)!=0)  :
-        kTrussValue=4
+        #kTrussValue=4
         args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
                  kTrussValue,\
                  graph.n_vertices,graph.n_edges,\
