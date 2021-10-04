@@ -9,16 +9,16 @@ Created on Sat Jul 24 17:06:43 2021
 import arkouda as ak
 import sys
 
-def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, directed):
+def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, directed, kvalue):
     ak.connect(connect_url=ak_server)
     Graph = ak.graph_file_read(num_edges,num_vertices,num_cols, directed, graph_location)
     print("directed graph  ={}".format(Graph.directed))
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
     print("weighted graph  ={}".format(Graph.weighted))
-    '''
-    for i in range(3020,3056) :
+    for i in range(0,10) :
          print(i,"=<",Graph.src[i]," -- ", Graph.dst[i],">")
+    '''
     print("vertex, neighbour, start")
     for i in range(int(Graph.n_vertices)):
          print("<",i,"--", Graph.neighbour[i],"--", Graph.start_i[i], ">")
@@ -34,7 +34,8 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("from src to dst")
     '''
 
-    testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,4)
+    testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,int(kvalue))
+    testval2 = ak.KTruss(Graph,-1)
     return testval2;
 
 if __name__ == '__main__':
@@ -45,7 +46,8 @@ if __name__ == '__main__':
     num_verts = int(sys.argv[4])
     num_cols = int(sys.argv[5])
     directed = int(sys.argv[6])
-    run_test(ak_server, graph_loc, num_edges, num_verts, num_cols, directed)
+    kvalue = int(sys.argv[7])
+    run_test(ak_server, graph_loc, num_edges, num_verts, num_cols, directed,kvalue)
     
     
 '''

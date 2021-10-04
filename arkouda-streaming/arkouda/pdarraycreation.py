@@ -16,6 +16,7 @@ __all__ = ["array", "zeros", "ones", "zeros_like", "ones_like",
            "random_strings_uniform", "random_strings_lognormal", 
            "from_series", "suffix_array","lcp_array","suffix_array_file",
            "rmat_gen","graph_bfs","graph_file_read", "graph_triangle_edge", "graph_triangle",
+           "KTruss", 
            "stream_file_read","stream_tri_cnt","streamPL_tri_cnt",
            "streamHead_tri_cnt","streamMid_tri_cnt","streamTail_tri_cnt"]
 
@@ -1258,6 +1259,49 @@ def graph_triangle (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW]) -> pdarray:
         return create_pdarray(repMsg)
         #return (levelary,vertexary)
         
+@typechecked
+def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pdarray:
+        #(Ne:int, Nv:int,Ncol:int,directed:int, filename: str)
+        """
+        This function will return the number of triangles in a static graph for each edge
+        Returns
+        -------
+        pdarray
+            The total number of triangles incident to each edge.
+
+        See Also
+        --------
+
+        Notes
+        -----
+        
+        Raises
+        ------  
+        RuntimeError
+        """
+        cmd="segmentedTruss"
+        #kTrussValue=4
+        args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
+                 kTrussValue,\
+                 graph.n_vertices,graph.n_edges,\
+                 graph.directed,graph.weighted,\
+                 graph.src.name,graph.dst.name,\
+                 graph.start_i.name,graph.neighbour.name,\
+                 graph.srcR.name,graph.dstR.name,\
+                 graph.start_iR.name,graph.neighbourR.name )
+        #repMsg = generic_msg(msg)
+        #args="{} {} {} {} {}".format(Ne, Nv, Ncol,directed, filename);
+        repMsg = generic_msg(cmd=cmd,args=args)
+        '''
+        tmpmsg=cast(str,repMsg).split('+')
+        levelstr=tmpmsg[0:1]
+        vertexstr=tmpmsg[1:2]
+        levelary=create_pdarray(*(cast(str,levelstr)) )
+        
+        vertexary=create_pdarray(*(cast(str,vertexstr)) )
+        '''
+        return create_pdarray(repMsg)
+
 @typechecked
 def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pdarray:
         #(Ne:int, Nv:int,Ncol:int,directed:int, filename: str)
