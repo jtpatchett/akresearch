@@ -7222,8 +7222,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
       var RemoteAccessTimes=0: [0..numLocales-1] int;
       var LocalAccessTimes=0: [0..numLocales-1] int;
 
-      //var timer=Timer;
-      repMsg = "Success Number 2";
       var srcN, dstN, startN, neighbourN,vweightN,eweightN, rootN :string;
       var srcRN, dstRN, startRN, neighbourRN:string;
       //timer.start();
@@ -7233,6 +7231,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
       var repCount=0:int;
       var EdgeCount = 0:[0..Ne] int;
       
+
+      var EdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
+      var lEdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
+      var AllRemoved:bool;
+      EdgeDeleted=-1;
+      lEdgeDeleted=-1;
+
 
       // this can be a general procedure so we put it outside
       proc xlocal(x :int, low:int, high:int):bool{
@@ -7272,60 +7277,53 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                        }
       }// end of proc
 
+      proc getupK(nei:[?D1] int, neiR:[?D11] int):int {
+          //var dNumber=makeDistArray(Nv,int); //we need a global instead of local array
+          var dNumber: [0..Nv-1] int;
+          dNumber=0;
+          var maxk=0:int;
+          for  i in 0..Nv-1 {
+               if nei[i]+neiR[i]>=Nv-1 {
+                  dNumber[Nv-1]+=1;
+               } else {
+                  dNumber[nei[i]+neiR[i]]+=1;
+               }
+          }
+          //writeln("Degree value=",dNumber);
+          var tmpi=Nv-1:int;
+          while tmpi>0 {
+               dNumber[tmpi-1]+=dNumber[tmpi];
+               if dNumber[tmpi]>=tmpi {
+                   maxk=tmpi;
+                   break;
+               }
+               tmpi=tmpi-1;
+          }
+          
+          //for  i in 0..Nv-2 {
+          //     dNumber[Nv-i-2]+=dNumber[Nv-i-1];
+          //}
+          //     if dNumber[Nv-i-1]>=Nv-i-1 {
+          //         maxk=Nv-i-1;
+          //         break;
+          //     } 
+          //}
+          return maxk;
+      }
 
-      proc kMaxTruss(kInput:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
-                        neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
+      proc SkMaxTruss(kInput:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
+                        neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):bool {
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag((int,int),Locales); //use bag to keep the next frontier
-          var EdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
-          //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
-          //var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
-          var N1=0:int;
+          //var lEdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
           var N2=0:int;
           var k=kInput:int;
           var ConFlag=true:bool;
-          EdgeDeleted=-1;
           var RemovedEdge=0: int;
           var TriCount=makeDistArray(Ne,bool): int;
           TriCount=0;
           var timer:Timer;
 
-
-          proc RemoveDuplicatedEdges( cur: int, k:int):int {
-               if ( (cur<D3.low) || (cur >D3.high) || (cur==0) ) {
-                    return -1;
-               }
-               var u=src[cur]:int;
-               var v=dst[cur]:int;
-               var lu=start_i[u]:int;
-               var nu=nei[u]:int;
-               var lv=start_i[v]:int;
-               var nv=nei[v]:int;
-               var DupE:int;
-               if ((nu<=1) || (cur<=lu)) {
-                   DupE=-1;
-               } else {
-                   
-                   DupE =binSearchE(dst,lu,cur-1,v);
-               }
-               if (DupE!=-1) {
-                    EdgeDeleted[cur]=k;
-                    //writeln("In function 1 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-               } else {
-                   if (u>v) {
-                      if (nv<=0) {
-                         DupE=-1;
-                      } else {
-                         DupE=binSearchE(dst,lv,lv+nv-1,u);
-                      }
-                      if (DupE!=-1) {
-                           EdgeDeleted[cur]=k;
-                           //writeln("In function 2 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-                      }
-                   }
-               }
-               return DupE;
-          }
 
           // given vertces u and v, return the edge ID e=<u,v> or e=<v,u>
           proc findEdge(u:int,v:int):int {
@@ -7355,38 +7353,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           }// end of  proc findEdge(u:int,v:int)
           //here we begin the first naive version
           timer.start();
-          coforall loc in Locales {
-              on loc {
-                    var ld = src.localSubdomain();
-                    var startEdge = ld.low;
-                    var endEdge = ld.high;
-                    forall i in startEdge..endEdge {
-                        var v1=src[i];
-                        var v2=dst[i];
-                        if (  (nei[v1]+neiR[v1])<k-1  || 
-                             ((nei[v2]+neiR[v2])<k-1) || (v1==v2)) {
-                            //we will delete all the edges connected with a vertex only has very small degree 
-                            //(less than k-1)
-                              EdgeDeleted[i]=k;
-                              //writeln("For k=",k," We have removed the edge ",i, "=<",v1,",",v2,">");
-                              //writeln("Degree of ",v1,"=",nei[v1]+neiR[v1]," Degree of ",v2, "=",nei[v2]+neiR[v2]);
-                              // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
-                              // we also remove the self-loop like <v,v>
-                              if (v1==v2) {
-                                   //writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
-                              }
-                        }
-                        if (EdgeDeleted[i]==-1) {
-                             var DupE= RemoveDuplicatedEdges(i,k);
-                             if (DupE!=-1) {
-                                  //writeln("My locale=",here.id, " Find duplicated edges ",i,"=<",src[i],",",dst[i],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-                             }
-                        }
-                    }
-              }        
-          }// end of coforall loc        
-
-          writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -7407,14 +7373,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                          //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
                          var beginTmp=start_i[u];
                          var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                         if ((lEdgeDeleted[i]==-1) && (u!=v) ){
                             if ( (nei[u]>0)  ){
                                forall x in dst[beginTmp..endTmp] with (ref uadj) {
                                    var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
                                    if (e==-1){
                                       //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
                                    } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
                                              uadj.add(x);
                                       }
                                    }
@@ -7428,7 +7394,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                    if (e==-1){
                                       //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
                                    } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
                                              uadj.add(x);
                                       }
                                    }
@@ -7440,7 +7406,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                var Count=0:int;
                                forall s in uadj with ( + reduce Count) {
                                    var e=findEdge(s,v);
-                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
+                                   if ( (e!=-1) && (lEdgeDeleted[e]==-1) && (e!=i) ) {
                                       Count +=1;
                                       //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
                                    }
@@ -7461,8 +7427,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      //writeln("9 My locale=",here.id, " Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
                      forall i in startEdge..endEdge with(ref SetCurF){
-                               if ((EdgeDeleted[i]==-1) && (TriCount[i] < k-2)) {
-                                     EdgeDeleted[i] = k;
+                               if ((lEdgeDeleted[i]==-1) && (TriCount[i] < k-2)) {
+                                     lEdgeDeleted[i] = k-1;
                                      SetCurF.add(i);
                                      //writeln("10 My Locale=",here.id," removed edge ",i,"=<",src[i],",",dst[i]," > Triangles=",TriCount[i], " in iteration=",N1);
                                      //KeepCheck[here.id]=true;
@@ -7470,365 +7436,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      }
                   }// end of  on loc 
               } // end of coforall loc in Locales 
-
-
-
-
-              //writeln("11 My Locale=",here.id," Current Frontier=", SetCurF," Iteration=",N2);
-              //if (!SetCurF.isEmpty()) {
-              if ( SetCurF.getSize()<=0){
-                      //ConFlag=false;
-                      k+=1;
-              }
-
-
-              // we try to remove as many edges as possible in the following code
-              //while (!SetCurF.isEmpty()) {
-              //writeln("SetCurF size=",SetCurF.getSize());
-              while (SetCurF.getSize()>0) {
-                  //first we build the edge set that will be affected by the removed edges in SetCurF
-                  coforall loc in Locales with ( ref SetNextF) {
-                      on loc {
-                           var ld = src.localSubdomain();
-                           var startEdge = ld.low;
-                           var endEdge = ld.high;
-                           forall i in SetCurF with (ref SetNextF) {
-                              if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
-                                  var    v1=src[i];
-                                  var    v2=dst[i];
-                                  var nextStart=start_i[v1];
-                                  var nextEnd=start_i[v1]+nei[v1]-1;
-                                  if (nei[v1]>0) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=src[j];//v3==v1
-                                         var v4=dst[j]; 
-                                         var tmpe:int;
-                                         if ( (EdgeDeleted[j]==-1) && (v2!=v4 )) {
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                       if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,j))) {
-                                                                  SetNextF.add((i,j));
-                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
-                                                       }
-                                                   }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
-
-
-
-                                  nextStart=start_iR[v1];
-                                  nextEnd=start_iR[v1]+neiR[v1]-1;
-                                  if ((nextStart!=-1) && (neiR[v1]>0)) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=srcR[j];//v1==v3
-                                         var v4=dstR[j]; 
-                                         var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
-                                         var tmpe:int;
-                                         if (e1==-1) {
-                                               //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
-                                         } else {
-                                            if ( (EdgeDeleted[e1]==-1) && (v2!=v4)) {
-                                                   // we first check if  the two different vertices can be the third edge
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {
-                                                       if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,e1))) {
-                                                                  SetNextF.add((i,e1));
-                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
-                                                       }
-                                                   }
-                                            }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
-
-
-                              } // end if (xlocal(i,startEdge,endEdge) 
-                           } // end forall i in SetCurF with (ref SetNextF) 
-                           //writeln("Current frontier =",SetCurF);
-                           //writeln("next    frontier =",SetNextF);
-                      } //end on loc 
-                  } //end coforall loc in Locales 
-
-                  //writeln("next    frontier =",SetNextF);
-                  SetCurF.clear();
-                  // then we try to remove the affected edges
-                  coforall loc in Locales  {
-                      on loc {
-                           var ld = src.localSubdomain();
-                           var startEdge = ld.low;
-                           var endEdge = ld.high;
-                           var rset = new set((int,int), parSafe = true);
-
-                           forall (i,j) in SetNextF with(ref rset)  {
-                           //forall (i,j) in SetNextF   {
-                              if (xlocal(j,startEdge,endEdge)) {//each local only check the owned edges
-                                        if (EdgeDeleted[j]==-1) {
-                                             rset.add((i,j));
-                                             if (TriCount[j]<k-1) {
-                                                  EdgeDeleted[j]=k;
-                                                  SetCurF.add(j);
-                                                  //writeln("13 My locale=", here.id, " After Iteration ",N2," we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
-                                             }
-                                        }
-
-                              }
-                           }// end of forall
-                           for (i,j) in rset  {
-                                if TriCount[j]>0 {
-                                    TriCount[j]-=1;
-                                }
-                           }
-                      } //end on loc 
-                  } //end coforall loc in Locales 
-                  RemovedEdge+=SetCurF.getSize();
-                  //SetCurF<=>SetNextF;
-                  SetNextF.clear();
-                  //writeln("After Exchange");
-                  //writeln("Current frontier =",SetCurF);
-                  //writeln("next    frontier =",SetNextF);
-              }// end of while (!SetCurF.isEmpty()) 
-              N2+=1;
-              var tmpi=0;
-              for i in 0..Ne-1 {
-                  if (EdgeDeleted[i]>-1) {
-                      //writeln("remove the ",tmpi, " edge ",i);
-                      tmpi+=1;
-                  } else {
-                      //writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
-                  }
-              }
-              if (tmpi<Ne) {
-                  ConFlag=true;
-              } else {
-                  ConFlag=false;
-              }
-          }// end while 
-
-          timer.stop();
-          writeln("After KMaxTruss,Total execution time=",timer.elapsed());
-          writeln("After KMaxTruss,Total number of iterations =",N2);
-          writeln("After KMaxTruss,K Max= ",k-1);
-
-          var countName = st.nextName();
-          var countEntry = new shared SymEntry(EdgeDeleted);
-          st.addEntry(countName, countEntry);
-
-          var cntMsg =  'created ' + st.attrib(countName);
-          return cntMsg;
-      } // end of proc KMaxTruss
-                    
-
-
-      proc kTruss(k:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
-                        neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
-          var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
-          var SetNextF=  new DistBag((int,int),Locales); //use bag to keep the next frontier
-          var EdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
-          //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
-          //var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
-          var N1=0:int;
-          var N2=0:int;
-          var ConFlag=true:bool;
-          EdgeDeleted=-1;
-          var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
-          TriCount=0;
-          var timer:Timer;
-
-          proc RemoveDuplicatedEdges( cur: int, k :int):int {
-               if ( (cur<D3.low) || (cur >D3.high) || (cur==0) ) {
-                    return -1;
-               }
-               var u=src[cur]:int;
-               var v=dst[cur]:int;
-               var lu=start_i[u]:int;
-               var nu=nei[u]:int;
-               var lv=start_i[v]:int;
-               var nv=nei[v]:int;
-               var DupE:int;
-               if ((nu<=1) || (cur<=lu)) {
-                   DupE=-1;
-               } else {
-                   
-                   DupE =binSearchE(dst,lu,cur-1,v);
-               }
-               if (DupE!=-1) {
-                    EdgeDeleted[cur]=k;
-                    //writeln("In function 1 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-               } else {
-                   if (u>v) {
-                      if (nv<=0) {
-                         DupE=-1;
-                      } else {
-                         DupE=binSearchE(dst,lv,lv+nv-1,u);
-                      }
-                      if (DupE!=-1) {
-                           EdgeDeleted[cur]=k;
-                           //writeln("In function 2 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-                      }
-                   }
-               }
-               return DupE;
-          }
-
-          // given vertces u and v, return the edge ID e=<u,v> or e=<v,u>
-          proc findEdge(u:int,v:int):int {
-              //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
-              if ((u==v) || (u<D1.low) || (v<D1.low) || (u>D1.high) || (v>D1.high) ) {
-                    return -1;
-                    // we do not accept self-loop
-              }
-              var beginE=start_i[u];
-              var eid=-1:int;
-              if (nei[u]>0) {
-                  if ( (beginE>=0) && (v>=dst[beginE]) && (v<=dst[beginE+nei[u]-1]) )  {
-                       eid=binSearchE(dst,beginE,beginE+nei[u]-1,v);
-                       // search <u,v> in undirect edges 
-                  } 
-              } 
-              if (eid==-1) {// if b
-                 beginE=start_i[v];
-                 if (nei[v]>0) {
-                    if ( (beginE>=0) && (u>=dst[beginE]) && (u<=dst[beginE+nei[v]-1]) )  {
-                          eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
-                          // search <v,u> in undirect edges 
-                    } 
-                 }
-              }// end of if b
-              return eid;
-          }// end of  proc findEdge(u:int,v:int)
-          //here we begin the first naive version
-          timer.start();
-          coforall loc in Locales {
-              on loc {
-                    var ld = src.localSubdomain();
-                    var startEdge = ld.low;
-                    var endEdge = ld.high;
-                    forall i in startEdge..endEdge {
-                        var v1=src[i];
-                        var v2=dst[i];
-                        if (  (nei[v1]+neiR[v1])<k-1  || 
-                             ((nei[v2]+neiR[v2])<k-1) || (v1==v2)) {
-                            //we will delete all the edges connected with a vertex only has very small degree 
-                            //(less than k-1)
-                              EdgeDeleted[i]=k;
-                              //writeln("For k=",k," We have removed the edge ",i, "=<",v1,",",v2,">");
-                              //writeln("Degree of ",v1,"=",nei[v1]+neiR[v1]," Degree of ",v2, "=",nei[v2]+neiR[v2]);
-                              // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
-                              // we also remove the self-loop like <v,v>
-                              if (v1==v2) {
-                                   //writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
-                              }
-                        }
-                        if (EdgeDeleted[i]==-1) {
-                             var DupE= RemoveDuplicatedEdges(i,k);
-                             if (DupE!=-1) {
-                                  //writeln("My locale=",here.id, " Find duplicated edges ",i,"=<",src[i],",",dst[i],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-                             }
-                        }
-                    }
-              }        
-          }// end of coforall loc        
-
-          writeln("After Preprocessing");
-
-          //we will try to remove all the unnecessary edges in the graph
-          while (ConFlag) {
-              // first we calculate the number of triangles
-              coforall loc in Locales with (ref SetCurF ) {
-                  on loc {
-                     var ld = src.localSubdomain();
-                     var startEdge = ld.low;
-                     var endEdge = ld.high;
-                     //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
-                     // each locale only handles the edges owned by itself
-                     forall i in startEdge..endEdge with(ref SetCurF){
-                         TriCount[i]=0;
-                         var uadj = new set(int, parSafe = true);
-                         var vadj = new set(int, parSafe = true);
-                         var u = src[i];
-                         var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
-                                   }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
-                                   }
-                               }
-                            }
-                            
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
-                                      Count +=1;
-                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
-                                   }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
-                     }// end of forall. We get the number of triangles for each edge
-                  }// end of  on loc 
-              } // end of coforall loc in Locales 
-              coforall loc in Locales with (ref SetCurF ) {
-                  on loc {
-                     var ld = src.localSubdomain();
-                     var startEdge = ld.low;
-                     var endEdge = ld.high;
-                     //writeln("9 My locale=",here.id, " Begin Edge=",startEdge, " End Edge=",endEdge);
-                     // each locale only handles the edges owned by itself
-                     forall i in startEdge..endEdge with(ref SetCurF){
-                               if ((EdgeDeleted[i]==-1) && (TriCount[i] < k-2)) {
-                                     EdgeDeleted[i] = k;
-                                     SetCurF.add(i);
-                                     //writeln("10 My Locale=",here.id," removed edge ",i,"=<",src[i],",",dst[i]," > Triangles=",TriCount[i], " in iteration=",N1);
-                                     //KeepCheck[here.id]=true;
-                               }
-                     }
-                  }// end of  on loc 
-              } // end of coforall loc in Locales 
-
-
 
 
               //writeln("11 My Locale=",here.id," Current Frontier=", SetCurF," Iteration=",N2);
@@ -7838,6 +7445,369 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       //k+=1;
               }
 
+              // we try to remove as many edges as possible in the following code
+              //while (!SetCurF.isEmpty()) {
+              //writeln("SetCurF size=",SetCurF.getSize());
+              while (SetCurF.getSize()>0) {
+                  //first we build the edge set that will be affected by the removed edges in SetCurF
+                  coforall loc in Locales with ( ref SetNextF) {
+                      on loc {
+                           var ld = src.localSubdomain();
+                           var startEdge = ld.low;
+                           var endEdge = ld.high;
+                           forall i in SetCurF with (ref SetNextF) {
+                              if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
+                                  var    v1=src[i];
+                                  var    v2=dst[i];
+                                  var nextStart=start_i[v1];
+                                  var nextEnd=start_i[v1]+nei[v1]-1;
+                                  if (nei[v1]>0) {
+                                     forall j in nextStart..nextEnd with (ref SetNextF){
+                                         var v3=src[j];//v3==v1
+                                         var v4=dst[j]; 
+                                         var tmpe:int;
+                                         if ( (lEdgeDeleted[j]==-1) && (v2!=v4 )) {
+                                                   tmpe=findEdge(v2,v4);
+                                                   if (tmpe!=-1) {// there is such third edge
+                                                       if (lEdgeDeleted[tmpe]==-1) {// the edge has not been deleted
+                                                              //if (!SetNextF.contains((i,j))) {
+                                                                  SetNextF.add((i,j));
+                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
+                                                              //}
+                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                                  SetNextF.add((i,tmpe));
+                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
+                                                              //}
+                                                       }
+                                                   }
+                                         }
+                                     }// end of  forall j in nextStart..nextEnd 
+                                  }// end of if
+
+
+                                  nextStart=start_iR[v1];
+                                  nextEnd=start_iR[v1]+neiR[v1]-1;
+                                  if ((nextStart!=-1) && (neiR[v1]>0)) {
+                                     forall j in nextStart..nextEnd with (ref SetNextF){
+                                         var v3=srcR[j];//v1==v3
+                                         var v4=dstR[j]; 
+                                         var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                         var tmpe:int;
+                                         if (e1==-1) {
+                                               //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                         } else {
+                                            if ( (lEdgeDeleted[e1]==-1) && (v2!=v4)) {
+                                                   // we first check if  the two different vertices can be the third edge
+                                                   tmpe=findEdge(v2,v4);
+                                                   if (tmpe!=-1) {
+                                                       if (lEdgeDeleted[tmpe]==-1) {// the edge has not been deleted
+                                                              //if (!SetNextF.contains((i,e1))) {
+                                                                  SetNextF.add((i,e1));
+                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
+                                                              //}
+                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                                  SetNextF.add((i,tmpe));
+                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
+                                                              //}
+                                                       }
+                                                   }
+                                            }
+                                         }
+                                     }// end of  forall j in nextStart..nextEnd 
+                                  }// end of if
+
+
+                              } // end if (xlocal(i,startEdge,endEdge) 
+                           } // end forall i in SetCurF with (ref SetNextF) 
+                           //writeln("Current frontier =",SetCurF);
+                           //writeln("next    frontier =",SetNextF);
+                      } //end on loc 
+                  } //end coforall loc in Locales 
+
+                  //writeln("next    frontier =",SetNextF);
+                  SetCurF.clear();
+                  // then we try to remove the affected edges
+                  coforall loc in Locales  {
+                      on loc {
+                           var ld = src.localSubdomain();
+                           var startEdge = ld.low;
+                           var endEdge = ld.high;
+                           var rset = new set((int,int), parSafe = true);
+                           forall (i,j) in SetNextF with(ref rset)  {
+                           //forall (i,j) in SetNextF   {
+                              if (xlocal(j,startEdge,endEdge)) {//each local only check the owned edges
+                                        if (lEdgeDeleted[j]==-1) {
+                                             rset.add((i,j));
+                                             if (TriCount[j]<k-1) {
+                                                  lEdgeDeleted[j]=k-1;
+                                                  SetCurF.add(j);
+                                                  //writeln("13 My locale=", here.id, " After Iteration ",N2," we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
+                                             }
+                                        }
+
+                              }
+                           }// end of forall
+                           for (i,j) in rset  {
+                                if TriCount[j]>0 {
+                                    TriCount[j]-=1;
+                                }
+                           }
+                      } //end on loc 
+                  } //end coforall loc in Locales 
+                  //RemovedEdge+=SetCurF.getSize();
+                  //SetCurF<=>SetNextF;
+                  SetNextF.clear();
+                  //writeln("After Exchange");
+                  //writeln("Current frontier =",SetCurF);
+                  //writeln("next    frontier =",SetNextF);
+              }// end of while (!SetCurF.isEmpty()) 
+              N2+=1;
+          }// end while 
+
+          //timer.stop();
+          //writeln("After KMaxTruss,Total execution time=",timer.elapsed());
+          //writeln("After KMaxTruss,Total number of iterations =",N2);
+          //writeln("After KMaxTruss,K Cur= ",k-1);
+
+          var tmpi=0;
+          while tmpi<Ne {
+                  if (lEdgeDeleted[tmpi]==-1) {
+                      return false;
+                  } else {
+                      tmpi+=1;
+                  }
+          }
+          return true;
+
+          //for i in 0..Ne-1 {
+          //        if (lEdgeDeleted[i]==-1) {
+          //            return false;
+          //        } else {
+          //            tmpi+=1;
+          //        }
+          //}
+          //var countName = st.nextName();
+          //var countEntry = new shared SymEntry(EdgeDeleted);
+          //st.addEntry(countName, countEntry);
+
+          //var cntMsg =  'created ' + st.attrib(countName);
+          //return ConFalg;
+      } // end of proc SKMaxTruss
+                    
+
+      proc kTruss(k:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
+                        neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
+          var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
+          var SetNextF=  new DistBag((int,int),Locales); //use bag to keep the next frontier
+          //var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
+          //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
+          //var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
+          var N1=0:int;
+          var N2=0:int;
+          var ConFlag=true:bool;
+          //KeepCheck=true;
+          EdgeDeleted=-1;
+          var RemovedEdge=0: int;
+          var TriCount=makeDistArray(Ne,bool): int;
+          TriCount=0;
+          var timer:Timer;
+
+
+          proc RemoveDuplicatedEdges( cur: int):int {
+               if ( (cur<D3.low) || (cur >D3.high) || (cur==0) ) {
+                    return -1;
+               }
+               var u=src[cur]:int;
+               var v=dst[cur]:int;
+               var lu=start_i[u]:int;
+               var nu=nei[u]:int;
+               var lv=start_i[v]:int;
+               var nv=nei[v]:int;
+               var DupE:int;
+               if ((nu<=1) || (cur<=lu)) {
+                   DupE=-1;
+               } else {
+                   
+                   DupE =binSearchE(dst,lu,cur-1,v);
+               }
+               if (DupE!=-1) {
+                    EdgeDeleted[cur]=k-1;
+                    //writeln("In function 1 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+               } else {
+                   if (u>v) {
+                      if (nv<=0) {
+                         DupE=-1;
+                      } else {
+                         DupE=binSearchE(dst,lv,lv+nv-1,u);
+                      }
+                      if (DupE!=-1) {
+                           EdgeDeleted[cur]=k-1;
+                           //writeln("In function 2 Find duplicated edges ",cur,"=<",src[cur],",",dst[cur],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                      }
+                   }
+               }
+               return DupE;
+          }
+
+          // given vertces u and v, return the edge ID e=<u,v> or e=<v,u>
+          proc findEdge(u:int,v:int):int {
+              //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
+              if ((u==v) || (u<D1.low) || (v<D1.low) || (u>D1.high) || (v>D1.high) ) {
+                    return -1;
+                    // we do not accept self-loop
+              }
+              var beginE=start_i[u];
+              var eid=-1:int;
+              if (nei[u]>0) {
+                  if ( (beginE>=0) && (v>=dst[beginE]) && (v<=dst[beginE+nei[u]-1]) )  {
+                       eid=binSearchE(dst,beginE,beginE+nei[u]-1,v);
+                       // search <u,v> in undirect edges 
+                  } 
+              } 
+              if (eid==-1) {// if b
+                 beginE=start_i[v];
+                 if (nei[v]>0) {
+                    if ( (beginE>=0) && (u>=dst[beginE]) && (u<=dst[beginE+nei[v]-1]) )  {
+                          eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
+                          // search <v,u> in undirect edges 
+                    } 
+                 }
+              }// end of if b
+              return eid;
+          }// end of  proc findEdge(u:int,v:int)
+          //here we begin the first naive version
+          timer.start();
+          coforall loc in Locales {
+              on loc {
+                    var ld = src.localSubdomain();
+                    var startEdge = ld.low;
+                    var endEdge = ld.high;
+                    forall i in startEdge..endEdge {
+                        var v1=src[i];
+                        var v2=dst[i];
+                        if (  (nei[v1]+neiR[v1])<k-1  || 
+                             ((nei[v2]+neiR[v2])<k-1) || (v1==v2)) {
+                            //we will delete all the edges connected with a vertex only has very small degree 
+                            //(less than k-1)
+                              EdgeDeleted[i]=k-1;
+                              //writeln("For k=",k," We have removed the edge ",i, "=<",v1,",",v2,">");
+                              //writeln("Degree of ",v1,"=",nei[v1]+neiR[v1]," Degree of ",v2, "=",nei[v2]+neiR[v2]);
+                              // we can safely delete the edge <u,v> if the degree of u or v is less than k-1
+                              // we also remove the self-loop like <v,v>
+                              if (v1==v2) {
+                                   //writeln("My locale=",here.id," Find self-loop ",i,"=<",src[i],",",dst[i],">");
+                              }
+                        }
+                        if (EdgeDeleted[i]==-1) {
+                             var DupE= RemoveDuplicatedEdges(i);
+                             if (DupE!=-1) {
+                                  //writeln("My locale=",here.id, " Find duplicated edges ",i,"=<",src[i],",",dst[i],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
+                                  if (EdgeDeleted[i]==-1) {
+                                          //writeln("My locale=",here.id, " before assignment edge ",i," has not been set as true");
+                                  }
+                                  EdgeDeleted[i]=k-1;
+                             }
+                        }
+                    }
+              }        
+          }// end of coforall loc        
+
+          writeln("After Preprocessing");
+
+          //we will try to remove all the unnecessary edges in the graph
+          while (ConFlag) {
+              //ConFlag=false;
+              // first we calculate the number of triangles
+              coforall loc in Locales with (ref SetCurF ) {
+                  on loc {
+                     var ld = src.localSubdomain();
+                     var startEdge = ld.low;
+                     var endEdge = ld.high;
+                     //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
+                     // each locale only handles the edges owned by itself
+                     forall i in startEdge..endEdge with(ref SetCurF){
+                         TriCount[i]=0;
+                         var uadj = new set(int, parSafe = true);
+                         var vadj = new set(int, parSafe = true);
+                         var u = src[i];
+                         var v = dst[i];
+                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                         var beginTmp=start_i[u];
+                         var endTmp=beginTmp+nei[u]-1;
+                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                            if ( (nei[u]>0)  ){
+                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                   if (e==-1){
+                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                   } else {
+                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                             uadj.add(x);
+                                      }
+                                   }
+                               }
+                            }
+                            beginTmp=start_iR[u];
+                            endTmp=beginTmp+neiR[u]-1;
+                            if ((neiR[u]>0) ){
+                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                   var e=findEdge(x,u);
+                                   if (e==-1){
+                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                   } else {
+                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                             uadj.add(x);
+                                      }
+                                   }
+                               }
+                            }
+                            
+                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                            if  (! uadj.isEmpty() ){
+                               var Count=0:int;
+                               forall s in uadj with ( + reduce Count) {
+                                   var e=findEdge(s,v);
+                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
+                                      Count +=1;
+                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                   }
+                               }
+                               TriCount[i] = Count;
+                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                               // here we get the number of triangles of edge ID i
+                            }// end of if 
+                        }//end of if
+                     }// end of forall. We get the number of triangles for each edge
+                  }// end of  on loc 
+              } // end of coforall loc in Locales 
+              coforall loc in Locales with (ref SetCurF ) {
+                  on loc {
+                     var ld = src.localSubdomain();
+                     var startEdge = ld.low;
+                     var endEdge = ld.high;
+                     //writeln("9 My locale=",here.id, " Begin Edge=",startEdge, " End Edge=",endEdge);
+                     // each locale only handles the edges owned by itself
+                     forall i in startEdge..endEdge with(ref SetCurF){
+                               if ((EdgeDeleted[i]==-1) && (TriCount[i] < k-2)) {
+                                     EdgeDeleted[i] = k-1;
+                                     SetCurF.add(i);
+                                     //writeln("10 My Locale=",here.id," removed edge ",i,"=<",src[i],",",dst[i]," > Triangles=",TriCount[i], " in iteration=",N1);
+                                     //KeepCheck[here.id]=true;
+                               }
+                     }
+                  }// end of  on loc 
+              } // end of coforall loc in Locales 
+
+
+
+
+              //writeln("Current frontier =",SetCurF);
+              //writeln("11 My Locale=",here.id," Current Frontier=", SetCurF," Iteration=",N2);
+              //if (!SetCurF.isEmpty()) {
+              if ( SetCurF.getSize()<=0){
+                      ConFlag=false;
+              }
+
 
               // we try to remove as many edges as possible in the following code
               //while (!SetCurF.isEmpty()) {
@@ -7935,7 +7905,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                         if (EdgeDeleted[j]==-1) {
                                              rset.add((i,j));
                                              if (TriCount[j]<k-1) {
-                                                  EdgeDeleted[j]=k;
+                                                  EdgeDeleted[j]=k-1;
                                                   SetCurF.add(j);
                                                   //writeln("13 My locale=", here.id, " After Iteration ",N2," we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
                                              }
@@ -7960,19 +7930,30 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               N2+=1;
           }// end while 
 
+
+
           timer.stop();
+          //writeln("After Optimization,Total execution time=",timer.elapsed());
+          //writeln("After Optimization,Total number of iterations =",N2);
+          //writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
+          //writeln("Saved number of iterations=",N1-N2);
+          AllRemoved=true;
           var tmpi=0;
-          for i in 0..Ne-1 {
-          if EdgeDeleted[i]>0 {
-                      //writeln("remove the ",tmpi, " edge ",i);
-                      tmpi+=1;
-                  } else {
-                      //writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
-                  }
+          while tmpi<Ne {
+              if (EdgeDeleted[i]==-1) {
+                  //writeln("remove the ",tmpi, " edge ",i);
+                  AllRemoved=false;
+                  break;
+              } else {
+                  tmpi+=1;
+                  //writeln("keep the ",i, " = <", src[i],",",dst[i]," > edge ");
+              }
           }
+
+
           writeln("After KTruss,Total execution time=",timer.elapsed());
           writeln("After KTruss,Total number of iterations =",N2);
-          writeln("After KTruss,Totally remove ",tmpi, " Edges");
+          //writeln("After KTruss,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -7990,19 +7971,85 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       srcN,dstN, startN,neighbourN,
                       srcRN,dstRN, startRN,neighbourRN,
                       st);
+      var kLow=3:int;
+      var kUp:int;
+      var kMid:int;
+      var maxtimer:Timer;
 
-      if (kValue>0) {
+      if (kValue>0) {// k branch
             repMsg=kTruss(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-      } else {
-            kValue=3;
-            repMsg=kMaxTruss(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+      } else {//k max branch
+            maxtimer.start();
+            // we first initialize the kmax from kLow=3
+            repMsg=kTruss(kLow,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-      }
+            kUp=getupK(ag.neighbour.a, ag.neighbourR.a);
+            //writeln("Max K Up=",kUp);
+            if ((AllRemoved==false) && (kUp>3)) {// k max >3
+                var ConLoop=true:bool;
+                while ( (ConLoop) && (kLow<kUp)) {
+                     // we will continuely check if the up value can remove the all edges
+                     forall i in 0..Ne-1 {
+                         lEdgeDeleted[i]=EdgeDeleted[i];
+                     }
+                     AllRemoved=SkMaxTruss(kUp,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                           ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+                     //writeln("Try up=",kUp);
+                     if (AllRemoved==false) { //the up value is the max k
+                            ConLoop=false;
+                     } else {// we will check the mid value to reduce k max
+                        kMid= (kLow+kUp)/2;
+                        forall i in 0..Ne-1 {
+                            lEdgeDeleted[i]=EdgeDeleted[i];
+                        }
+                        //writeln("Try mid=",kMid);
+                        AllRemoved=SkMaxTruss(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                               ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+                        if (AllRemoved==true) { // if mid value can remove all edges, we will reduce the up value for checking
+                              kUp=kMid-1;
+                        } else { // we will improve both low and mid value
+                              if kMid==kUp-1 {
+                                  ConLoop=false;
+                                  kUp=kMid;
+                              } else {// we will update the low value and then check the mid value
+                                 while ((AllRemoved==false) && (kMid<kUp-1)) {
+                                        kLow=kMid;
+                                        kMid= (kLow+kUp)/2;
+                                        forall i in 0..Ne-1 { 
+                                            EdgeDeleted[i]=lEdgeDeleted[i];
+                                        }
+                                        //writeln("Try mid again=",kMid);
+                                        AllRemoved=SkMaxTruss(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                                               ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+                                 }
+                                 kUp=kMid;
+                                 if ((AllRemoved==false) ) {
+                                    ConLoop=false;
+                                 }
+                              }
+                        }
+                     }
+                }// end of while
+                var countName = st.nextName();
+                var countEntry = new shared SymEntry(lEdgeDeleted);
+                st.addEntry(countName, countEntry);
+                repMsg =  'created ' + st.attrib(countName);
+                maxtimer.stop();
+                writeln("After Max KTruss,Total execution time 1=",maxtimer.elapsed());
+                writeln("After Max KTruss,Max k=",kUp);
+            } else {//kUp<=3 or AllRemoved==true
+                maxtimer.stop();
+                writeln("After Max KTruss,Total execution time 2=",maxtimer.elapsed());
+                if (AllRemoved==false) {
+                    writeln("After Max KTruss,Max k=",3);
+                } else {
+                    writeln("After Max KTruss,Max k=",2);
+                }
+            }
+      }//
       return new MsgTuple(repMsg, MsgType.NORMAL);
   }
-
-
 
   proc segTriMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {
       var repMsg: string;
@@ -8448,7 +8495,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
       timer.stop();
       smLogger.debug(getModuleName(),getRoutineName(),getLineNumber(),repMsg);
       return new MsgTuple(repMsg, MsgType.NORMAL);
-  }
+  }// end of seg
 
 
 
