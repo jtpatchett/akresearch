@@ -7940,7 +7940,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           AllRemoved=true;
           var tmpi=0;
           while tmpi<Ne {
-              if (EdgeDeleted[i]==-1) {
+              if (EdgeDeleted[tmpi]==-1) {
                   //writeln("remove the ",tmpi, " edge ",i);
                   AllRemoved=false;
                   break;
