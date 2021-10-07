@@ -16,9 +16,9 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
     print("weighted graph  ={}".format(Graph.weighted))
+    '''
     for i in range(0,10) :
          print(i,"=<",Graph.src[i]," -- ", Graph.dst[i],">")
-    '''
     print("vertex, neighbour, start")
     for i in range(int(Graph.n_vertices)):
          print("<",i,"--", Graph.neighbour[i],"--", Graph.start_i[i], ">")
@@ -34,8 +34,12 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("from src to dst")
     '''
 
+    print("k=",kvalue)
     testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,int(kvalue))
+    print("k=-1")
     testval2 = ak.KTruss(Graph,-1)
+    print("k=-2")
+    testval2 = ak.KTruss(Graph,-2)
     return testval2;
 
 if __name__ == '__main__':
