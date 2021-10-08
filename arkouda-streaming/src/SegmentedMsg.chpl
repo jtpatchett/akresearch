@@ -6416,7 +6416,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -6510,12 +6510,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       //writeln("11 My Locale=", here.id, " Iteration ", N1," ", SetCurF.getSize(), " Edges have been removed");
               }
               SetCurF.clear();
-              //for i in KeepCheck[0..numLocales-1] {
-              //     if i {
-              //        ConFlag=true;
-              //     }
-              //}
-          }// end while (KeepCheck) 
+          }// end while 
           timer.stop();
           writeln("Before Optimization Total time=",timer.elapsed() );
           writeln("Before Optimization Total number of iterations=",N1);
@@ -6646,7 +6641,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -6772,8 +6767,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               //}
           }// end while (KeepCheck) 
           timer.stop();
-          writeln("Before Optimization Total time=",timer.elapsed() );
-          writeln("Before Optimization Total number of iterations=",N1);
+          writeln("Before Optimization (Intersection) Total time=",timer.elapsed() );
+          writeln("Before Optimization (Intersection) Total number of iterations=",N1);
           var tmpi=0:int;
           for i in 0..Ne-1 {
               if EdgeDeleted[i] {
@@ -6781,7 +6776,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                   tmpi+=1;
               }
           }
-          writeln("Before optimization totally removed  ",tmpi, " edges ");
+          writeln("Before optimization (Intersection) totally removed  ",tmpi, " edges ");
 
           return "completed";
       } // end of proc kTrussNavieIntersection
@@ -6906,7 +6901,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -7268,7 +7263,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -7519,9 +7514,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
-          writeln("After Optimization,Total execution time=",timer.elapsed());
-          writeln("After Optimization,Total number of iterations =",N2);
-          writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
+          writeln("After Optimization (Intersection),Total execution time=",timer.elapsed());
+          writeln("After Optimization (Intersection),Total number of iterations =",N2);
+          writeln("After Optimization (Intersection),Total Deleted edges using the new method=",RemovedEdge);
           //writeln("Saved number of iterations=",N1-N2);
           var tmpi=0;
           for i in 0..Ne-1 {
@@ -7855,7 +7850,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
 
-  proc segTruss(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {
+  proc segTrussMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {
       var repMsg: string;
       var (kTrussN,n_verticesN, n_edgesN, directedN, weightedN, restpart )
           = payload.splitMsgToTuple(6);
@@ -8388,7 +8383,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
-          //KeepCheck=true;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
           var TriCount=makeDistArray(Ne,bool): int;
@@ -8487,13 +8481,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
               //ConFlag=false;
               // first we calculate the number of triangles
-              SetCurF.clear();
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
@@ -8727,7 +8720,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -8948,10 +8941,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
-          //writeln("After Optimization,Total execution time=",timer.elapsed());
-          //writeln("After Optimization,Total number of iterations =",N2);
-          //writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
-          //writeln("Saved number of iterations=",N1-N2);
           AllRemoved=true;
           var tmpi=0;
           while tmpi<Ne {
@@ -8981,13 +8970,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):string throws{
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag((int,int),Locales); //use bag to keep the next frontier
-          //var EdgeDeleted=makeDistArray(Ne,bool); //we need a global instead of local array
-          //var RemovedEdge=makeDistArray(numLocales,int);// we accumulate the edges according to different locales
-          //var KeepCheck=makeDistArray(numLocales,bool);// we accumulate the edges according to different locales
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
-          //KeepCheck=true;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
           var TriCount=makeDistArray(Ne,bool): int;
@@ -9095,7 +9080,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -9187,6 +9172,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       //ConFlag=false;
                       k+=1;
               }
+              SetCurF.clear();
 
               var tmpi=0;
               ConFlag=false;
@@ -9335,7 +9321,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }        
           }// end of coforall loc        
 
-          writeln("After Preprocessing");
+          //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
@@ -9558,9 +9544,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                  if (EdgeDeleted[tmpi]==-1) {
                      ConFlag=true;
                      break;
-                 } else {
-                  tmpi+=1;
                  }
+                  tmpi+=1;
               }
 
               N2+=1;
@@ -9597,14 +9582,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
       var maxtimer:Timer;
 
       if (kValue>0) {// k branch
+            writeln("Enter kTrussNaive k=",kValue);
             repMsg=kTrussNaive(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
 
+            writeln("Enter kTruss k=",kValue);
             repMsg=kTruss(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       } else if (kValue==-2) {
+            writeln("Enter Truss Decomposition Naive ");
             repMsg=TrussDecompositionNaive(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+            writeln("Enter Truss Decomposition ");
             repMsg=TrussDecomposition(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
 

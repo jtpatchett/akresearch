@@ -356,7 +356,7 @@ proc main() {
                 when "segmentedBinopvvInt"  {repTuple = segBinopvvIntMsg(cmd, args, st);}
                 when "segmentedBinopvsInt"  {repTuple = segBinopvsIntMsg(cmd, args, st);}
                 when "segmentedGraphTriEdge" {repTuple = segTriEdgeMsg(cmd, args, st);}
-                when "segmentedTruss"       {repTuple = segTruss(cmd, args, st);}
+                when "segmentedTruss"       {repTuple = segTrussMsg(cmd, args, st);}
 
 
 

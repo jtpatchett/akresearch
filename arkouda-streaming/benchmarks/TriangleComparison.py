@@ -34,10 +34,11 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     print("from src to dst")
     '''
 
-    //print("k=",kvalue)
-    //testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,int(kvalue))
     print("k=",kvalue)
-    testval2 = ak.KTruss(Graph,int(kvalue))
+    testval2 = ak.pdarraycreation.graph_triangle_edge(Graph,int(kvalue))
+    print("k=-1")
+    testval2 = ak.KTruss(Graph,-1)
+    #testval2 = ak.KTruss(Graph,int(kvalue))
     return testval2;
 
 if __name__ == '__main__':
