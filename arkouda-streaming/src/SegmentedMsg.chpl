@@ -1362,6 +1362,11 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                       //}
                       curline+=1;
                   } 
+                  if (curline<=srclocal.high) {
+                     writeln("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                     writeln("The input file ",FileName, " does not give enough edges for locale ", here.id);
+                     writeln("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                  }
                   forall i in src.localSubdomain() {
                   //     src[i]=src[i]+(src[i]==dst[i]);
                        src[i]=src[i]%Nv;
@@ -6512,12 +6517,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               SetCurF.clear();
           }// end while 
           timer.stop();
+          writeln("Before Optimization Given k=",k);
           writeln("Before Optimization Total time=",timer.elapsed() );
           writeln("Before Optimization Total number of iterations=",N1);
           var tmpi=0:int;
           for i in 0..Ne-1 {
               if EdgeDeleted[i] {
-                  //writeln("remove the ",tmpi, " edge ",i);
                   tmpi+=1;
               }
           }
@@ -6767,12 +6772,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               //}
           }// end while (KeepCheck) 
           timer.stop();
+          writeln("Before Optimization (Intersection) Given k=",k);
           writeln("Before Optimization (Intersection) Total time=",timer.elapsed() );
           writeln("Before Optimization (Intersection) Total number of iterations=",N1);
           var tmpi=0:int;
           for i in 0..Ne-1 {
               if EdgeDeleted[i] {
-                  //writeln("remove the ",tmpi, " edge ",i);
                   tmpi+=1;
               }
           }
@@ -7019,18 +7024,16 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          var v3=src[j];//v3==v1
                                          var v4=dst[j]; 
                                          var tmpe:int;
-                                         if ( (EdgeDeleted[j]==false) && (v2!=v4 )) {
+                                         if ( ( (EdgeDeleted[j]==false) || (SetCurF.contains(j))) && (v2!=v4 )) {
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {// there is such third edge
                                                        if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,j))) {
+                                                              if (EdgeDeleted[j]==false) {
                                                                   SetNextF.add((i,j));
-                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[j]==false) ||(i<j)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                          }
@@ -7050,19 +7053,17 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          if (e1==-1) {
                                                //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
                                          } else {
-                                            if ( (EdgeDeleted[e1]==false) && (v2!=v4)) {
+                                            if ( ((EdgeDeleted[e1]==false) ||(SetCurF.contains(e1))) && (v2!=v4)) {
                                                    // we first check if  the two different vertices can be the third edge
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,e1))) {
+                                                              if (EdgeDeleted[e1]==false) {
                                                                   SetNextF.add((i,e1));
-                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[e1]==false) || (i<e1)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                             }
@@ -7105,6 +7106,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for (i,j) in rset  {
                                 if TriCount[j]>0 {
                                     TriCount[j]-=1;
+                                    if (TriCount[j]<k-2) {
+                                                  EdgeDeleted[j]=true;
+                                                  SetCurF.add(j);
+                                    }
                                 }
                            }
                       } //end on loc 
@@ -7122,6 +7127,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
+          writeln("After Optimization,Given k=",k);
           writeln("After Optimization,Total execution time=",timer.elapsed());
           writeln("After Optimization,Total number of iterations =",N2);
           writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
@@ -7411,18 +7417,16 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          var v3=src[j];//v3==v1
                                          var v4=dst[j]; 
                                          var tmpe:int;
-                                         if ( (EdgeDeleted[j]==false) && (v2!=v4 )) {
+                                         if ( ((EdgeDeleted[j]==false) || SetCurF.contains(j)) && (v2!=v4 )) {
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {// there is such third edge
                                                        if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,j))) {
+                                                              if (EdgeDeleted[j]==false) {
                                                                   SetNextF.add((i,j));
-                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[j]==false) ||(i<j)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                          }
@@ -7442,19 +7446,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          if (e1==-1) {
                                                //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
                                          } else {
-                                            if ( (EdgeDeleted[e1]==false) && (v2!=v4)) {
+                                            //if ( ((EdgeDeleted[e1]==false) ||(SetCurF.contains(e1))) && (v2!=v4)) {
+                                            if ( ((EdgeDeleted[e1]==false)) && (v2!=v4)) {
                                                    // we first check if  the two different vertices can be the third edge
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==false) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,e1))) {
+                                                              if (EdgeDeleted[e1]==false) {
                                                                   SetNextF.add((i,e1));
-                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[e1]==false) || (i<e1)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                             }
@@ -7497,6 +7500,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for (i,j) in rset  {
                                 if TriCount[j]>0 {
                                     TriCount[j]-=1;
+                                    if (TriCount[j]<k-2) {
+                                                  EdgeDeleted[j]=true;
+                                                  SetCurF.add(j);
+                                    }
                                 }
                            }
                       } //end on loc 
@@ -7514,6 +7521,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
+          writeln("After Optimization (Intersection),Given k=",k);
           writeln("After Optimization (Intersection),Total execution time=",timer.elapsed());
           writeln("After Optimization (Intersection),Total number of iterations =",N2);
           writeln("After Optimization (Intersection),Total Deleted edges using the new method=",RemovedEdge);
@@ -8346,6 +8354,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for (i,j) in rset  {
                                 if TriCount[j]>0 {
                                     TriCount[j]-=1;
+                                    if (TriCount[j]<k-2) {
+                                                  lEdgeDeleted[j]=k-1;
+                                                  SetCurF.add(j);
+                                    }
                                 }
                            }
                       } //end on loc 
@@ -8582,12 +8594,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          while tmpi<Ne {
-              if (EdgeDeleted[tmpi]==-1) {
-                  //writeln("remove the ",tmpi, " edge ",i);
+          
+          for i in 0..Ne-1  {
+              if (EdgeDeleted[i]==-1) {
                   AllRemoved=false;
+              } else {
+                  tmpi+=1;
               }
-              tmpi+=1;
           }
 
           writeln("After Naive KTruss,Total execution time=",timer.elapsed());
@@ -8838,18 +8851,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          var v3=src[j];//v3==v1
                                          var v4=dst[j]; 
                                          var tmpe:int;
-                                         if ( (EdgeDeleted[j]==-1) && (v2!=v4 )) {
+                                         //if ( ((EdgeDeleted[j]==-1)||(SetCurF.contains(j))) && (v2!=v4 )) {
+                                         if ( ((EdgeDeleted[j]==-1)) && (v2!=v4 )) {
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {// there is such third edge
                                                        if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
                                                               //if (!SetNextF.contains((i,j))) {
+                                                              if (EdgeDeleted[j]==-1) {
                                                                   SetNextF.add((i,j));
-                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[j]==-1) ||(i<j)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                          }
@@ -8869,19 +8882,19 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          if (e1==-1) {
                                                //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
                                          } else {
-                                            if ( (EdgeDeleted[e1]==-1) && (v2!=v4)) {
+                                            //if ( ((EdgeDeleted[e1]==-1)||SetCurF.contains(e1)) && (v2!=v4)) {
+                                            if ( ((EdgeDeleted[e1]==-1)) && (v2!=v4)) {
                                                    // we first check if  the two different vertices can be the third edge
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
                                                               //if (!SetNextF.contains((i,e1))) {
+                                                              if (EdgeDeleted[e1]==-1) {
                                                                   SetNextF.add((i,e1));
-                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[e1]==-1) || (i<e1)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                             }
@@ -8913,7 +8926,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                         if (EdgeDeleted[j]==-1) {
                                              rset.add((i,j));
                                              if (TriCount[j]<k-1) {
-                                                  EdgeDeleted[j]=k-1;
+                                                  //EdgeDeleted[j]=k-1;
                                                   SetCurF.add(j);
                                                   //writeln("13 My locale=", here.id, " After Iteration ",N2," we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
                                              }
@@ -8924,6 +8937,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for (i,j) in rset  {
                                 if TriCount[j]>0 {
                                     TriCount[j]-=1;
+                                    if ((TriCount[j]<k-2) && (EdgeDeleted[j]==-1)) {
+                                                  EdgeDeleted[j]=k-1;
+                                                  SetCurF.add(j);
+                                    }
                                 }
                            }
                       } //end on loc 
@@ -8943,18 +8960,19 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          while tmpi<Ne {
-              if (EdgeDeleted[tmpi]==-1) {
+          for i in 0..Ne-1 {
+              if (EdgeDeleted[i]==-1) {
                   //writeln("remove the ",tmpi, " edge ",i);
                   AllRemoved=false;
-              } 
-              tmpi+=1;
+              } else {
+                  tmpi+=1;
+              }
           }
 
 
+          writeln("After KTruss,Given K=",k);
           writeln("After KTruss,Total execution time=",timer.elapsed());
           writeln("After KTruss,Total number of iterations =",N2);
-          writeln("After KTruss,Given K=",k);
           writeln("After KTruss,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
@@ -9191,8 +9209,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
-          writeln("After Truss Decomposition Naive ,Total execution time=",timer.elapsed());
           writeln("After Truss Decomposition Naive, Max K =",k-1);
+          writeln("After Truss Decomposition Naive ,Total execution time=",timer.elapsed());
           writeln("After Truss Decomposition Naive ,Total number of iterations =",N2);
           AllRemoved=true;
           var countName = st.nextName();
@@ -9440,18 +9458,17 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          var v3=src[j];//v3==v1
                                          var v4=dst[j]; 
                                          var tmpe:int;
-                                         if ( (EdgeDeleted[j]==-1) && (v2!=v4 )) {
+                                         //if ( ((EdgeDeleted[j]==-1) || SetCurF.contains(j)) && (v2!=v4 )) {
+                                         if ( ((EdgeDeleted[j]==-1)) && (v2!=v4 )) {
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {// there is such third edge
                                                        if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,j))) {
+                                                              if (EdgeDeleted[j]==-1) {
                                                                   SetNextF.add((i,j));
-                                                                  //writeln("12-1 My Locale=",here.id," Find affected edge ( ",i,",",j,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[j]==-1) ||(i<j)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-2 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                          }
@@ -9471,19 +9488,18 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                          if (e1==-1) {
                                                //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
                                          } else {
-                                            if ( (EdgeDeleted[e1]==-1) && (v2!=v4)) {
+                                            //if ( ((EdgeDeleted[e1]==-1)|| SetCurF.contains(e1)) && (v2!=v4)) {
+                                            if ( ((EdgeDeleted[e1]==-1)) && (v2!=v4)) {
                                                    // we first check if  the two different vertices can be the third edge
                                                    tmpe=findEdge(v2,v4);
                                                    if (tmpe!=-1) {
                                                        if (EdgeDeleted[tmpe]==-1) {// the edge has not been deleted
-                                                              //if (!SetNextF.contains((i,e1))) {
+                                                              if (EdgeDeleted[e1]==-1) {
                                                                   SetNextF.add((i,e1));
-                                                                  //writeln("12-5 My Locale=",here.id," Find affected edge ( ",i,",",e1,") Iteration=",N2);
-                                                              //}
-                                                              //if (!SetNextF.contains((i,tmpe))) {
+                                                              }
+                                                              if ((EdgeDeleted[e1]==-1) || (i<e1)) {
                                                                   SetNextF.add((i,tmpe));
-                                                                  //writeln("12-6 My Locale=",here.id," Find affected edge ( ",i,",",tmpe,") Iteration=",N2);
-                                                              //}
+                                                              }
                                                        }
                                                    }
                                             }
@@ -9515,7 +9531,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                         if (EdgeDeleted[j]==-1) {
                                              rset.add((i,j));
                                              if (TriCount[j]<k-1) {
-                                                  EdgeDeleted[j]=k-1;
+                                                  //EdgeDeleted[j]=k-1;
                                                   SetCurF.add(j);
                                                   //writeln("13 My locale=", here.id, " After Iteration ",N2," we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
                                              }
@@ -9526,6 +9542,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            for (i,j) in rset  {
                                 if TriCount[j]>0 {
                                     TriCount[j]-=1;
+                                    if (TriCount[j]<k-2) {
+                                                  EdgeDeleted[j]=k-1;
+                                                  SetCurF.add(j);
+                                    }
                                 }
                            }
                       } //end on loc 
@@ -9554,9 +9574,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
-          writeln("After Truss Decomposition ,Total execution time=",timer.elapsed());
           writeln("After Truss Decomposition, Max K =",k-1);
-          writeln("After Truss Decomposition,Total number of iterations =",N2);
+          writeln("After Truss Decomposition ,Total execution time=",timer.elapsed());
+          writeln("After Truss Decomposition, Total number of iterations =",N2);
           //writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
           //writeln("Saved number of iterations=",N1-N2);
           AllRemoved=true;
