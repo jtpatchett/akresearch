@@ -8582,12 +8582,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          while tmpi<Ne {
-              if (EdgeDeleted[tmpi]==-1) {
+          for i in 0..Ne-1  {
+              if (EdgeDeleted[i]==-1) {
                   //writeln("remove the ",tmpi, " edge ",i);
                   AllRemoved=false;
+              } else {
+                  tmpi+=1;
               }
-              tmpi+=1;
           }
 
           writeln("After Naive KTruss,Total execution time=",timer.elapsed());
@@ -8943,12 +8944,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          while tmpi<Ne {
-              if (EdgeDeleted[tmpi]==-1) {
+          for i in 0..Ne-1  {
+              if (EdgeDeleted[i]==-1) {
                   //writeln("remove the ",tmpi, " edge ",i);
                   AllRemoved=false;
-              } 
-              tmpi+=1;
+              } else {
+                tmpi+=1;
+              }
           }
 
 
