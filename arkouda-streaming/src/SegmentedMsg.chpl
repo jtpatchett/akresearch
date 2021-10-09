@@ -8602,9 +8602,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
           }
 
+          writeln("After Naive KTruss,Given k=",k);
           writeln("After Naive KTruss,Total execution time=",timer.elapsed());
           writeln("After Naive KTruss,Total number of iterations =",N2);
-          writeln("After Naive KTruss,Given k=",k);
           writeln("After Naive KTruss,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
