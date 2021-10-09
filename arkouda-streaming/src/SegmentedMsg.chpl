@@ -8594,7 +8594,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          
           for i in 0..Ne-1  {
               if (EdgeDeleted[i]==-1) {
                   AllRemoved=false;
@@ -8960,7 +8959,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           timer.stop();
           AllRemoved=true;
           var tmpi=0;
-          for i in 0..Ne-1 {
+          for i in 0..Ne-1  {
               if (EdgeDeleted[i]==-1) {
                   //writeln("remove the ",tmpi, " edge ",i);
                   AllRemoved=false;
