@@ -6318,7 +6318,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var ConFlag=true:bool;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -6543,7 +6543,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var ConFlag=true:bool;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -6799,7 +6799,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //KeepCheck=true;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -7166,7 +7166,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //KeepCheck=true;
           EdgeDeleted=false;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -7959,6 +7959,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           return maxk;
       }
 
+
       proc SkMaxTrussNaive(kInput:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):bool {
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
@@ -7968,7 +7969,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var k=kInput:int;
           var ConFlag=true:bool;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -8012,59 +8013,122 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var endEdge = ld.high;
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
+
+
+
                      forall i in startEdge..endEdge with(ref SetCurF){
                          TriCount[i]=0;
                          var uadj = new set(int, parSafe = true);
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((lEdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((lEdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }
                                    }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
                                    }
-                               }
-                            }
+                                }
                             
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1) && (lEdgeDeleted[e]==-1) && (e!=i) ) {
-                                      Count +=1;
-                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( lEdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if
+                        }
                      }// end of forall. We get the number of triangles for each edge
+
+
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               coforall loc in Locales with (ref SetCurF ) {
@@ -8132,7 +8196,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var k=kInput:int;
           var ConFlag=true:bool;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -8176,61 +8240,120 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var endEdge = ld.high;
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
+
                      forall i in startEdge..endEdge with(ref SetCurF){
                          TriCount[i]=0;
                          var uadj = new set(int, parSafe = true);
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((lEdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((lEdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>1)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }
                                    }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
                                    }
-                               }
-                            }
+                                }
                             
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1)  && (e!=i) ) {
-                                      if   (lEdgeDeleted[e]==-1)  {
-                                          Count +=1;
-                                          //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
-                                      }
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( lEdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((lEdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>1) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((lEdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( lEdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if
+                        }
                      }// end of forall. We get the number of triangles for each edge
+
+
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               coforall loc in Locales with (ref SetCurF ) {
@@ -8272,79 +8395,156 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            var startEdge = ld.low;
                            var endEdge = ld.high;
 
+
+
+
+
                            forall i in SetCurF with (ref SetNextF) {
                               if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
-                                  var nextStart=start_i[v1];
-                                  var nextEnd=start_i[v1]+nei[v1]-1;
-                                  if (nei[v1]>1) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=src[j];//v3==v1
-                                         var v4=dst[j]; 
-                                         var tmpe:int;
-                                         if ( (lEdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( lEdgeDeleted[tmpe]<=-1 ) {
-                                                           if ((lEdgeDeleted[j]==-1) && (lEdgeDeleted[tmpe]==-1)) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,j));
-                                                           } else {
-                                                               if ((lEdgeDeleted[j]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,j));
-                                                               } else { 
-                                                                   if ((lEdgeDeleted[tmpe]==-1) &&(i<j)) {
-                                                                       SetNextF.add((i,tmpe));
+                                  var    dv1=nei[v1]+neiR[v1];
+                                  var    dv2=nei[v2]+neiR[v2];
+                                  if (dv1<=dv2) {
+                                      var nextStart=start_i[v1];
+                                      var nextEnd=start_i[v1]+nei[v1]-1;
+                                      if (nei[v1]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v1
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (lEdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( lEdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((lEdgeDeleted[j]==-1) && (lEdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((lEdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((lEdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
                                                                    }   
-                                                               }   
-                                                           }
-                                                     }
-                                                   }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+    
 
 
-
-                                  nextStart=start_iR[v1];
-                                  nextEnd=start_iR[v1]+neiR[v1]-1;
-                                  if (neiR[v1]>0) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=srcR[j];//v1==v3
-                                         var v4=dstR[j]; 
-                                         var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
-                                         var tmpe:int;
-                                         if (e1==-1) {
-                                               //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
-                                         } else {
-                                            if ( (lEdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
-                                                   // we first check if  the two different vertices can be the third edge
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( lEdgeDeleted[tmpe]<=-1 ) {
-                                                           if ( (lEdgeDeleted[e1]==-1) && (lEdgeDeleted[tmpe]==-1) ) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,e1));
-                                                           } else {
-                                                               if ((lEdgeDeleted[e1]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,e1));
-                                                               } else { 
-                                                                   if ((lEdgeDeleted[tmpe]==-1) &&(i<e1)) {
-                                                                       SetNextF.add((i,tmpe));
+                                      nextStart=start_iR[v1];
+                                      nextEnd=start_iR[v1]+neiR[v1]-1;
+                                      if (neiR[v1]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v1==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (lEdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( lEdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (lEdgeDeleted[e1]==-1) && (lEdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((lEdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((lEdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
                                                                    } 
-                                                               } 
-                                                           }
-                                                     }
-                                                   }
-                                            }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  } else  {
 
+                                      var nextStart=start_i[v2];
+                                      var nextEnd=start_i[v2]+nei[v2]-1;
+                                      if (nei[v2]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v2
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (lEdgeDeleted[j]<=-1) && ( v1!=v4 ) ) {
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( lEdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((lEdgeDeleted[j]==-1) && (lEdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((lEdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((lEdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
+                                                                   }   
+                                                               }
+                                                         }
+                                                       }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+    
+
+
+                                      nextStart=start_iR[v2];
+                                      nextEnd=start_iR[v2]+neiR[v2]-1;
+                                      if (neiR[v2]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v2==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (lEdgeDeleted[e1]<=-1) && ( v1!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( lEdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (lEdgeDeleted[e1]==-1) && (lEdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((lEdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((lEdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
+                                                                   } 
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  }
 
                               } // end if (xlocal(i,startEdge,endEdge) 
                            } // end forall i in SetCurF with (ref SetNextF) 
+
+
+
 
                            //writeln("Current frontier =",SetCurF);
                            //writeln("next    frontier =",SetNextF);
@@ -8391,7 +8591,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                     if (TriCount[j]<k-2) {
                                          lEdgeDeleted[j]=1-k;
                                          SetCurF.add(j);
-                                         writeln("13 My Locale=",here.id," remove affected edge ",j,"=<",src[j],",",dst[j],"> in Iteration=",N2," --",tmpN2);
+                                         //writeln("13 My Locale=",here.id," remove affected edge ",j,"=<",src[j],",",dst[j],"> in Iteration=",N2," --",tmpN2);
                                     }
                                 }
                            }
@@ -8445,7 +8645,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var ConFlag=true:bool;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -8560,52 +8760,110 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>1)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }
                                    }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
                                    }
-                               }
-                            }
+                                }
                             
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
-                                      Count +=1;
-                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>1) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if
+                        }
                      }// end of forall. We get the number of triangles for each edge
                   }// end of  on loc 
               } // end of coforall loc in Locales 
@@ -8675,7 +8933,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var ConFlag=true:bool;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var timer:Timer;
 
@@ -9027,7 +9285,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                              var DupE= RemoveDuplicatedEdges(i);
                              if (DupE!=-1) {
                                   //writeln("My locale=",here.id, " Find duplicated edges ",i,"=<",src[i],",",dst[i],"> and ", DupE,"=<", src[DupE],",",dst[DupE],">");
-                                  EdgeDeleted[i]=k-1;
                              }
                         }
                     }
@@ -9040,70 +9297,131 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           while (ConFlag) {
               //ConFlag=false;
               // first we calculate the number of triangles
-              coforall loc in Locales with (ref SetCurF ) {
-                  on loc {
+
+              coforall loc in Locales with ( ref SetNextF) {
+                on loc {
                      var ld = src.localSubdomain();
                      var startEdge = ld.low;
                      var endEdge = ld.high;
-                     //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
-                     // each locale only handles the edges owned by itself
+
+
                      forall i in startEdge..endEdge with(ref SetCurF){
                          TriCount[i]=0;
                          var uadj = new set(int, parSafe = true);
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>1)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
-                                   }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
-                                   }
-                               }
-                            }
-                            
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if  (e!=-1)  {
-                                       if ( EdgeDeleted[e]==-1 ) {
-                                          Count +=1;
-                                          //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>1)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
                                        }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("O1 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count, " In iteration ",N2);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
-                     }// end of forall. We get the number of triangles for each edge
-                  }// end of  on loc 
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if EdgeDeleted[i]==-1
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>1) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if EdgeDeleted[i]==-1
+                        }// end of if du<=dv
+                  }// end of forall. We get the number of triangles for each edge
+
+
+                }// end of  on loc 
               } // end of coforall loc in Locales 
+
+
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
@@ -9127,14 +9445,13 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               //writeln("Current frontier =",SetCurF);
               //writeln("11 My Locale=",here.id," Current Frontier=", SetCurF," Iteration=",N2);
               //if (!SetCurF.isEmpty()) {
-              if ( SetCurF.getSize()<=0){
-                      ConFlag=false;
-              }
+              //if ( SetCurF.getSize()<=0){
+              //        ConFlag=false;
+              //}
               ConFlag=false;
 
 
               // we try to remove as many edges as possible in the following code
-              //while (!SetCurF.isEmpty()) {
               //writeln("SetCurF size=",SetCurF.getSize());
               var tmpN2=0:int;
               while (SetCurF.getSize()>0) {
@@ -9148,72 +9465,142 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                               if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
-                                  var nextStart=start_i[v1];
-                                  var nextEnd=start_i[v1]+nei[v1]-1;
-                                  if (nei[v1]>1) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=src[j];//v3==v1
-                                         var v4=dst[j]; 
-                                         var tmpe:int;
-                                         if ( (EdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( EdgeDeleted[tmpe]<=-1 ) {
-                                                           if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,j));
-                                                           } else {
-                                                               if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,j));
-                                                               } else { 
-                                                                   if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
-                                                                       SetNextF.add((i,tmpe));
+                                  var    dv1=nei[v1]+neiR[v1];
+                                  var    dv2=nei[v2]+neiR[v2];
+                                  if (dv1<=dv2) {
+                                      var nextStart=start_i[v1];
+                                      var nextEnd=start_i[v1]+nei[v1]-1;
+                                      if (nei[v1]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v1
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (EdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
                                                                    }   
-                                                               }   
-                                                           }
-                                                     }
-                                                   }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                             }// end of if EdgeDeleted[j]<=-1
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if nei[v1]>1
+    
 
 
-
-                                  nextStart=start_iR[v1];
-                                  nextEnd=start_iR[v1]+neiR[v1]-1;
-                                  if (neiR[v1]>0) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=srcR[j];//v1==v3
-                                         var v4=dstR[j]; 
-                                         var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
-                                         var tmpe:int;
-                                         if (e1==-1) {
-                                               //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
-                                         } else {
-                                            if ( (EdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
-                                                   // we first check if  the two different vertices can be the third edge
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( EdgeDeleted[tmpe]<=-1 ) {
-                                                           if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,e1));
-                                                           } else {
-                                                               if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,e1));
-                                                               } else { 
-                                                                   if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
-                                                                       SetNextF.add((i,tmpe));
+                                      nextStart=start_iR[v1];
+                                      nextEnd=start_iR[v1]+neiR[v1]-1;
+                                      if (neiR[v1]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v1==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (EdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
                                                                    } 
-                                                               } 
-                                                           }
-                                                     }
-                                                   }
-                                            }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  } else  {
 
+                                      var nextStart=start_i[v2];
+                                      var nextEnd=start_i[v2]+nei[v2]-1;
+                                      if (nei[v2]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v2
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (EdgeDeleted[j]<=-1) && ( v1!=v4 ) ) {
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
+                                                                   }   
+                                                               }
+                                                         }
+                                                       }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+    
+
+
+                                      nextStart=start_iR[v2];
+                                      nextEnd=start_iR[v2]+neiR[v2]-1;
+                                      if (neiR[v2]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v2==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (EdgeDeleted[e1]<=-1) && ( v1!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
+                                                                   } 
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  }
 
                               } // end if (xlocal(i,startEdge,endEdge) 
                            } // end forall i in SetCurF with (ref SetNextF) 
@@ -9246,12 +9633,14 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            var rset = new set((int,int), parSafe = true);
                            //writeln("O2-2 My locale=", here.id, " before update ",N2,"--",tmpN2,"  rset=",rset.size," SetNexF=",SetNextF.getSize());
 
-                           forall (i,j) in SetNextF with(ref rset)  {
-                              if (xlocal(j,startEdge,endEdge)) {//each local only check the owned edges
-                                             rset.add((i,j));// just want (i,j) is unique in rset
-                              }
-                           }// end of forall
-                           for (i,j) in rset  {
+                           //forall (i,j) in SetNextF with(ref rset)  {
+                           //   if (xlocal(j,startEdge,endEdge)) {//each local only check the owned edges
+                           //                  rset.add((i,j));// just want (i,j) is unique in rset
+                           //   }
+                           //}// end of forall
+                           //for (i,j) in rset  {
+                           forall (i,j) in SetNextF  {
+                             if (xlocal(j,startEdge,endEdge)) {//each local only check the owned edges
                                 if (EdgeDeleted[j]==-1) {
                                     TriCount[j]-=1;
                                     if (TriCount[j]<k-2) {
@@ -9260,6 +9649,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                                        //writeln("O3 My locale=", here.id, " After Iteration ",N2,"--",tmpN2,"  we removed edge ",j,"=<",src[j],",",dst[j]," > Triangles=",TriCount[j]);
                                     }
                                 }
+                             }
                            }
                            //writeln("O4 My locale=", here.id, " After Iteration ",N2,"--",tmpN2,"  rset=",rset.size," SetCurF=",SetCurF.getSize(), " SetNextF=",SetNextF.getSize());
                       } //end on loc 
@@ -9712,7 +10102,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var ConFlag=true:bool;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var k=kvalue:int;
           var timer:Timer;
@@ -9830,59 +10220,120 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var endEdge = ld.high;
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
+
                      forall i in startEdge..endEdge with(ref SetCurF){
                          TriCount[i]=0;
                          var uadj = new set(int, parSafe = true);
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>1)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }
                                    }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
                                    }
-                               }
-                            }
+                                }
                             
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
-                                      Count +=1;
-                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>1) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if
+                        }
                      }// end of forall. We get the number of triangles for each edge
+
+
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               coforall loc in Locales with (ref SetCurF ) {
@@ -9950,10 +10401,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           var N1=0:int;
           var N2=0:int;
           var ConFlag=true:bool;
-          //KeepCheck=true;
           EdgeDeleted=-1;
           var RemovedEdge=0: int;
-          var TriCount=makeDistArray(Ne,bool): int;
+          var TriCount=makeDistArray(Ne,int);
           TriCount=0;
           var k=kvalue:int;
           var timer:Timer;
@@ -10062,8 +10512,8 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
-              //ConFlag=false;
               // first we calculate the number of triangles
+              writeln("Enter Decomposition iteration=",N2," k=",k);
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
@@ -10071,59 +10521,123 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                      var endEdge = ld.high;
                      //writeln("Begin Edge=",startEdge, " End Edge=",endEdge);
                      // each locale only handles the edges owned by itself
+
                      forall i in startEdge..endEdge with(ref SetCurF){
                          TriCount[i]=0;
                          var uadj = new set(int, parSafe = true);
                          var vadj = new set(int, parSafe = true);
                          var u = src[i];
                          var v = dst[i];
-                         //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
-                         var beginTmp=start_i[u];
-                         var endTmp=beginTmp+nei[u]-1;
-                         if ((EdgeDeleted[i]==-1) && (u!=v) ){
-                            if ( (nei[u]>0)  ){
-                               forall x in dst[beginTmp..endTmp] with (ref uadj) {
-                                   var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                         var du=nei[u]+neiR[u];
+                         var dv=nei[v]+neiR[v];
+                         if ( du<=dv ) {
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[u];
+                             var endTmp=beginTmp+nei[u]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[u]>1)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref uadj) {
+                                       var  e=findEdge(u,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }
                                    }
-                               }
-                            }
-                            beginTmp=start_iR[u];
-                            endTmp=beginTmp+neiR[u]-1;
-                            if ((neiR[u]>0) ){
-                               forall x in dstR[beginTmp..endTmp] with (ref uadj) {
-                                   var e=findEdge(x,u);
-                                   if (e==-1){
-                                      //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
-                                   } else {
-                                      if ((EdgeDeleted[e] ==-1) && (x !=v)) {
-                                             uadj.add(x);
-                                      }
+                                }
+                                beginTmp=start_iR[u];
+                                endTmp=beginTmp+neiR[u]-1;
+                                if ((neiR[u]>0) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref uadj) {
+                                       var e=findEdge(x,u);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",u," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=v)) {
+                                                 uadj.add(x);
+                                          }
+                                       }  
                                    }
-                               }
-                            }
+                                }
                             
-                            //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
-                            if  (! uadj.isEmpty() ){
-                               var Count=0:int;
-                               forall s in uadj with ( + reduce Count) {
-                                   var e=findEdge(s,v);
-                                   if ( (e!=-1) && (EdgeDeleted[e]==-1) && (e!=i) ) {
-                                      Count +=1;
-                                      //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! uadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in uadj with ( + reduce Count) {
+                                       var e=findEdge(s,v);
+                                       if ( (e!=-1)  && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
                                    }
-                               }
-                               TriCount[i] = Count;
-                               //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
-                               // here we get the number of triangles of edge ID i
-                            }// end of if 
-                        }//end of if
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+                            }//end of if
+                        } else {
+
+                             //writeln("1 My Locale=",here.id," Current Edge=",i, "=<",u,",",v,">");
+                             var beginTmp=start_i[v];
+                             var endTmp=beginTmp+nei[v]-1;
+                             if ((EdgeDeleted[i]==-1) && (u!=v) ){
+                                if ( (nei[v]>0)  ){
+                                   forall x in dst[beginTmp..endTmp] with (ref vadj) {
+                                       var  e=findEdge(v,x);//here we find the edge ID to check if it has been removed
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }
+                                   }
+                                }
+                                beginTmp=start_iR[v];
+                                endTmp=beginTmp+neiR[v]-1;
+                                if ((neiR[v]>1) ){
+                                   forall x in dstR[beginTmp..endTmp] with (ref vadj) {
+                                       var e=findEdge(x,v);
+                                       if (e==-1){
+                                          //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
+                                       } else {
+                                          if ((EdgeDeleted[e] ==-1) && (x !=u)) {
+                                                 vadj.add(x);
+                                          }
+                                       }  
+                                   }
+                                }
+                            
+                                //writeln("2 ", "My Locale=", here.id, " The adjacent vertices of ",u,"->",v," =",uadj);
+                                if  (! vadj.isEmpty() ){
+                                   var Count=0:int;
+                                   forall s in vadj with ( + reduce Count) {
+                                       var e=findEdge(s,u);
+                                       if ( (e!=-1) && (e!=i) ) {
+                                           if ( EdgeDeleted[e]==-1 ) {
+                                              Count +=1;
+                                              //writeln("3 My locale=",here.id, " The ", Count, " Triangle <",u,",",v,",",s,"> is added");
+                                           }
+                                       }
+                                   }
+                                   TriCount[i] = Count;
+                                   //writeln("4 My Locale=", here.id, " The number of triangles of edge ",i,"=<",u,",",v," > is ", Count);
+                                   // here we get the number of triangles of edge ID i
+                                }// end of if 
+
+
+                            }//end of if
+                        }
                      }// end of forall. We get the number of triangles for each edge
+
+
+
+
+
                   }// end of  on loc 
               } // end of coforall loc in Locales 
               coforall loc in Locales with (ref SetCurF ) {
@@ -10150,10 +10664,12 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               //writeln("Current frontier =",SetCurF);
               //writeln("11 My Locale=",here.id," Current Frontier=", SetCurF," Iteration=",N2);
               //if (!SetCurF.isEmpty()) {
-              if ( SetCurF.getSize()<=0){
-                      //ConFlag=false;
-                      k+=1;
-              }
+              //if ( SetCurF.getSize()<=0){
+              //        ConFlag=false;
+              //} else {
+              //        k+=1;
+              //}
+
 
 
               // we try to remove as many edges as possible in the following code
@@ -10161,85 +10677,164 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               //writeln("SetCurF size=",SetCurF.getSize());
               while (SetCurF.getSize()>0) {
                   //first we build the edge set that will be affected by the removed edges in SetCurF
+
+
+
+
+
                   coforall loc in Locales with ( ref SetNextF) {
                       on loc {
                            var ld = src.localSubdomain();
                            var startEdge = ld.low;
                            var endEdge = ld.high;
 
+
+
+
                            forall i in SetCurF with (ref SetNextF) {
                               if (xlocal(i,startEdge,endEdge)) {//each local only check the owned edges
                                   var    v1=src[i];
                                   var    v2=dst[i];
-                                  var nextStart=start_i[v1];
-                                  var nextEnd=start_i[v1]+nei[v1]-1;
-                                  if (nei[v1]>1) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=src[j];//v3==v1
-                                         var v4=dst[j]; 
-                                         var tmpe:int;
-                                         if ( (EdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( EdgeDeleted[tmpe]<=-1 ) {
-                                                           if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,j));
-                                                           } else {
-                                                               if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,j));
-                                                               } else { 
-                                                                   if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
-                                                                       SetNextF.add((i,tmpe));
+                                  var    dv1=nei[v1]+neiR[v1];
+                                  var    dv2=nei[v2]+neiR[v2];
+                                  if (dv1<=dv2) {
+                                      var nextStart=start_i[v1];
+                                      var nextEnd=start_i[v1]+nei[v1]-1;
+                                      if (nei[v1]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v1
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (EdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
                                                                    }   
-                                                               }   
-                                                           }
-                                                     }
-                                                   }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+    
 
 
-
-                                  nextStart=start_iR[v1];
-                                  nextEnd=start_iR[v1]+neiR[v1]-1;
-                                  if (neiR[v1]>0) {
-                                     forall j in nextStart..nextEnd with (ref SetNextF){
-                                         var v3=srcR[j];//v1==v3
-                                         var v4=dstR[j]; 
-                                         var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
-                                         var tmpe:int;
-                                         if (e1==-1) {
-                                               //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
-                                         } else {
-                                            if ( (EdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
-                                                   // we first check if  the two different vertices can be the third edge
-                                                   tmpe=findEdge(v2,v4);
-                                                   if (tmpe!=-1) {// there is such third edge
-                                                     if ( EdgeDeleted[tmpe]<=-1 ) {
-                                                           if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
-                                                                  SetNextF.add((i,tmpe));
-                                                                  SetNextF.add((i,e1));
-                                                           } else {
-                                                               if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
-                                                                   SetNextF.add((i,e1));
-                                                               } else { 
-                                                                   if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
-                                                                       SetNextF.add((i,tmpe));
+                                      nextStart=start_iR[v1];
+                                      nextEnd=start_iR[v1]+neiR[v1]-1;
+                                      if (neiR[v1]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v1==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (EdgeDeleted[e1]<=-1) && ( v2!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v2,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
                                                                    } 
-                                                               } 
-                                                           }
-                                                     }
-                                                   }
-                                            }
-                                         }
-                                     }// end of  forall j in nextStart..nextEnd 
-                                  }// end of if
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  } else  {
 
+                                      var nextStart=start_i[v2];
+                                      var nextEnd=start_i[v2]+nei[v2]-1;
+                                      if (nei[v2]>0) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=src[j];//v3==v2
+                                             var v4=dst[j]; 
+                                             var tmpe:int;
+                                             if ( (EdgeDeleted[j]<=-1) && ( v1!=v4 ) ) {
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,j));
+                                                               } else {
+                                                                   if ((EdgeDeleted[j]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,j));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<j)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       }   
+                                                                   }   
+                                                               }
+                                                         }
+                                                       }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+    
+
+
+                                      nextStart=start_iR[v2];
+                                      nextEnd=start_iR[v2]+neiR[v2]-1;
+                                      if (neiR[v2]>1) {
+                                         forall j in nextStart..nextEnd with (ref SetNextF){
+                                             var v3=srcR[j];//v2==v3
+                                             var v4=dstR[j]; 
+                                             var e1=findEdge(v4,v3);// we need the edge ID in src instead of srcR
+                                             var tmpe:int;
+                                             if (e1==-1) {
+                                                   //writeln("Error! Cannot find the edge ",j,"=(",v4,",",v3,")");
+                                             } else {
+                                                if ( (EdgeDeleted[e1]<=-1) && ( v1!=v4 ) ) {
+                                                       // we first check if  the two different vertices can be the third edge
+                                                       tmpe=findEdge(v1,v4);
+                                                       if (tmpe!=-1) {// there is such third edge
+                                                         if ( EdgeDeleted[tmpe]<=-1 ) {
+                                                               if ( (EdgeDeleted[e1]==-1) && (EdgeDeleted[tmpe]==-1) ) {
+                                                                      SetNextF.add((i,tmpe));
+                                                                      SetNextF.add((i,e1));
+                                                               } else {
+                                                                   if ((EdgeDeleted[e1]==-1) && (i<tmpe)) {
+                                                                       SetNextF.add((i,e1));
+                                                                   } else { 
+                                                                       if ((EdgeDeleted[tmpe]==-1) &&(i<e1)) {
+                                                                           SetNextF.add((i,tmpe));
+                                                                       } 
+                                                                   } 
+                                                               }
+                                                         }
+                                                       }
+                                                }
+                                             }
+                                         }// end of  forall j in nextStart..nextEnd 
+                                      }// end of if
+                                  }
 
                               } // end if (xlocal(i,startEdge,endEdge) 
                            } // end forall i in SetCurF with (ref SetNextF) 
+
 
                       } //end on loc 
                   } //end coforall loc in Locales 
@@ -10305,6 +10900,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               while tmpi<Ne {
                  if (EdgeDeleted[tmpi]==-1) {
                      ConFlag=true;
+                     k+=1;
                      break;
                  }
                   tmpi+=1;
@@ -10320,7 +10916,6 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           writeln("After Truss Decomposition ,Total execution time=",timer.elapsed());
           writeln("After Truss Decomposition, Total number of iterations =",N2);
           //writeln("After Optimization, Total Deleted edges using the new method=",RemovedEdge);
-          //writeln("Saved number of iterations=",N1-N2);
           AllRemoved=true;
 
           var countName = st.nextName();
@@ -10361,10 +10956,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
       } else if (kValue==-2) {
             writeln("Enter Truss Decomposition Naive ");
-            repMsg=TrussDecompositionNaive(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+            repMsg=TrussDecompositionNaive(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
             writeln("Enter Truss Decomposition ");
-            repMsg=TrussDecomposition(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+            repMsg=TrussDecomposition(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
 
       } else  {//k max branch
