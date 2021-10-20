@@ -10513,7 +10513,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //we will try to remove all the unnecessary edges in the graph
           while (ConFlag) {
               // first we calculate the number of triangles
-              writeln("Enter Decomposition iteration=",N2," k=",k);
+              //writeln("Enter Decomposition iteration=",N2," k=",k);
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
