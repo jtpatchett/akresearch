@@ -7968,6 +7968,19 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           return maxk;
       }
 
+      proc getupKDirected(nei:[?D1] int ):int {
+          var dNumber: [0..Nv-1] int;
+          dNumber=0;
+          var maxk=0:int;
+          for  i in 0..Nv-1 {
+               if nei[i]>maxk {
+                  maxk=nei[i];
+               } 
+          }
+          maxk=maxk*2;
+          
+          return maxk;
+      }
 
       proc SkMaxTrussNaive(kInput:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):bool {
@@ -13689,6 +13702,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           } else if (kValue==-2) {
                 writeln("Enter Truss Directed Naive Decomposition");
                 repMsg=TrussNaiveDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+
                 writeln("Enter Truss Directed Decomposition ");
                 repMsg=TrussDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
 
@@ -13823,7 +13837,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     repMsg =  'created ' + st.attrib(countName);
                     maxtimer.stop();
                     writeln("After Optimized Max KTruss Directed ,Total execution time 1=",maxtimer.elapsed());
-                    writeln("After Optimized Max KTrussDirected ,Max k=",kUp);
+                    writeln("After Optimized Max KTruss Directed ,Max k=",kUp);
                 } else {//kUp<=3 or AllRemoved==true
                     maxtimer.stop();
                     writeln("After Optimized Max KTruss Directed ,Total execution time 2=",maxtimer.elapsed());
