@@ -13714,6 +13714,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
           } else  {//k max branch
 
+                /*
                 //first the naive method
                 maxtimer.clear();
                 EdgeDeleted=-1;
@@ -13853,6 +13854,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                         writeln("After Optimized Max KTruss Directed ,Max k=",2);
                     }
                 }
+                */
 
           }//
 
