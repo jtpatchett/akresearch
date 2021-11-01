@@ -46,7 +46,7 @@ def time_ak_bfs_graph(lgNv:int, Ne_per_v:int, p:float,directed:int,weighted:int)
     #Graph=ak.graph_file_read(100,101,2,directed,"/home/z/zd4/ArkoudaExtension/arkouda/data/100-1.gr")
     #Graph=ak.graph_file_read(2000,1002,2,directed,"/home/z/zd4/ArkoudaExtension/arkouda/data/2.gr")
     #Graph=ak.graph_file_read(149,53,2,directed,"/home/z/zd4/ArkoudaExtension/arkouda/data/50-3.gr")
-    Graph=ak.graph_file_read(3056,1024,2,directed,"/home/joseph/Downloads/delaunay_n10.gr")
+    Graph=ak.graph_file_read(3056,1024,2,directed,"/rhome/zhihui/ArkoudaExtension/arkouda/data/delaunay/delaunay_n10.gr")
     #Big number on left
     print("delaunay17")
     #Graph=ak.graph_file_read(10000,10001,2,directed,"/home/z/zd4/ArkoudaExtension/data/10000-1.gr")

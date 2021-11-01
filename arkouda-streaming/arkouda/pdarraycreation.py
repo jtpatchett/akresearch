@@ -1281,7 +1281,16 @@ def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pda
         """
         cmd="segmentedTruss"
         #kTrussValue=4
-        args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
+        if (int(graph.directed)>0)  :
+            args = "{} {} {} {} {} {} {} {} {}".format(
+                 kTrussValue,\
+                 graph.n_vertices,graph.n_edges,\
+                 graph.directed,graph.weighted,\
+                 graph.src.name,graph.dst.name,\
+                 graph.start_i.name,graph.neighbour.name )
+
+        else:
+            args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
                  kTrussValue,\
                  graph.n_vertices,graph.n_edges,\
                  graph.directed,graph.weighted,\
@@ -1289,6 +1298,7 @@ def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pda
                  graph.start_i.name,graph.neighbour.name,\
                  graph.srcR.name,graph.dstR.name,\
                  graph.start_iR.name,graph.neighbourR.name )
+
         #repMsg = generic_msg(msg)
         #args="{} {} {} {} {}".format(Ne, Nv, Ncol,directed, filename);
         repMsg = generic_msg(cmd=cmd,args=args)
@@ -1301,6 +1311,9 @@ def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pda
         vertexary=create_pdarray(*(cast(str,vertexstr)) )
         '''
         return create_pdarray(repMsg)
+
+
+
 
 @typechecked
 def graph_triangle_edge (graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pdarray:

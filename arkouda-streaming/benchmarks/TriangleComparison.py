@@ -11,7 +11,10 @@ import sys
 
 def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, directed, kvalue):
     ak.connect(connect_url=ak_server)
+    print("before file read")
+    print(num_edges," ",num_vertices," ",num_cols," ", directed," ", graph_location)
     Graph = ak.graph_file_read(num_edges,num_vertices,num_cols, directed, graph_location)
+
     print("directed graph  ={}".format(Graph.directed))
     print("number of vertices=", int(Graph.n_vertices))
     print("number of edges=", int(Graph.n_edges))
@@ -41,11 +44,13 @@ def run_test(ak_server, graph_location, num_edges, num_vertices, num_cols, direc
     
     print("k=",kvalue)
     testval2 = ak.KTruss(Graph,int(kvalue))
+    '''
     print("k=-1")
     testval2 = ak.KTruss(Graph,-1)
     print("k=-2")
     testval2 = ak.KTruss(Graph,-2)
     return testval2;
+    '''
 
 if __name__ == '__main__':
     print(sys.argv)
