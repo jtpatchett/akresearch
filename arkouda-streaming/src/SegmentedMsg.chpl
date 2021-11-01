@@ -12469,18 +12469,24 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               } // end of coforall loc in Locales 
 
 
-
+              if ( SetCurF.getSize()<=0){
+                      //ConFlag=false;
+                      k+=1;
+              }
+              SetCurF.clear();
 
               var tmpi=0;
               ConFlag=false;
               while tmpi<Ne {
                  if (EdgeDeleted[tmpi]==-1) {
                      ConFlag=true;
-                     k+=1;
                      break;
-                 }
+                 } else {
                   tmpi+=1;
+                 }
               }
+
+
               N2+=1;
           }// end while 
 
