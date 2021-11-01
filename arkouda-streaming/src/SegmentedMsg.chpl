@@ -9265,6 +9265,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               if SetCurF.getSize()>0 {
                   ConFlag=true;
               }
+              SetCurF.clear();
 
 
               N2+=1;
@@ -12216,9 +12217,9 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
 
           timer.stop();
-          writeln("After Truss Decomposition Naive, Max K =",k-1);
-          writeln("After Truss Decomposition Naive ,Total execution time=",timer.elapsed());
-          writeln("After Truss Decomposition Naive ,Total number of iterations =",N2);
+          writeln("After Truss Naive Decomposition , Max K =",k-1);
+          writeln("After Truss Naive Decomposition ,Total execution time=",timer.elapsed());
+          writeln("After Truss Naive Decomposition ,Total number of iterations =",N2);
           AllRemoved=true;
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -12503,10 +12504,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
           }
 
-          writeln("After KTruss Directed Naive Decomposition, Max K =",k-1);
-          writeln("After KTruss Directed Naive Composition,Total execution time=",timer.elapsed());
-          writeln("After KTruss Directed Naive Composition,Total number of iterations =",N2);
-          writeln("After KTruss Directed Naive Composition,Totally remove ",tmpi, " Edges");
+          writeln("After KTruss Naive Decomposition Directed , Max K =",k-1);
+          writeln("After KTruss Naive Decomposition Directed,Total execution time=",timer.elapsed());
+          writeln("After KTruss Naive Decomposition Directed,Total number of iterations =",N2);
+          writeln("After KTruss Naive Decomposition Directed,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -12948,10 +12949,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           }
 
 
-          writeln("After KTruss Directed Decomposition, Max K =",k-1);
-          writeln("After KTruss Directed Decomposition,Total execution time=",timer.elapsed());
-          writeln("After KTruss Directed Decomposition,Total number of iterations =",N2);
-          writeln("After KTruss Directed Decomposition,Totally remove ",tmpi, " Edges");
+          writeln("After KTruss Decomposition Directed , Max K =",k-1);
+          writeln("After KTruss Decomposition Directed ,Total execution time=",timer.elapsed());
+          writeln("After KTruss Decomposition Directed ,Total number of iterations =",N2);
+          writeln("After KTruss Decomposition Directed ,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -13530,14 +13531,25 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                 writeln("Enter kTrussMix k=",kValue);
                 repMsg=kTrussMix(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+
+                writeln("Enter kTrussNaive Directed k=",kValue);
+                repMsg=kTrussNaiveDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
+    
+                writeln("Enter kTruss Directed k=",kValue);
+                repMsg=kTrussDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
           } else if (kValue==-2) {
-                writeln("Enter Truss Decomposition Naive ");
+                writeln("Enter Truss Naive Decomposition");
                 repMsg=TrussDecompositionNaive(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
                 writeln("Enter Truss Decomposition ");
                 repMsg=TrussDecomposition(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
 
+                writeln("Enter Truss Naive Decomposition Directed ");
+                repMsg=TrussNaiveDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+
+                writeln("Enter Truss Decomposition Directed ");
+                repMsg=TrussDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
           } else  {//k max branch
 
                 //first the naive method
@@ -13600,15 +13612,15 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     st.addEntry(countName, countEntry);
                     repMsg =  'created ' + st.attrib(countName);
                     maxtimer.stop();
-                    writeln("After Naive Max KTruss,Total execution time 1=",maxtimer.elapsed());
-                    writeln("After Naive Max KTruss,Max k=",kUp);
+                    writeln("After Max KTruss Naive, Total execution time 1=",maxtimer.elapsed());
+                    writeln("After Max KTruss Naive, Max k=",kUp);
                 } else {//kUp<=3 or AllRemoved==true
                     maxtimer.stop();
-                    writeln("After Naive Max KTruss,Total execution time 2=",maxtimer.elapsed());
+                    writeln("After Max KTruss Naive ,Total execution time 2=",maxtimer.elapsed());
                     if (AllRemoved==false) {
-                        writeln("After Naive Max KTruss,Max k=",3);
+                        writeln("After Max KTruss Naive, Max k=",3);
                     } else {
-                        writeln("After Naive Max KTruss,Max k=",2);
+                        writeln("After Max KTruss Naive,Max k=",2);
                     }
                 }
 
@@ -13689,6 +13701,146 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     }
                 }
 
+                //first the naive directed method
+                maxtimer.clear();
+                EdgeDeleted=-1;
+                lEdgeDeleted=-1;
+                maxtimer.start();
+                kLow=3;
+                // we first initialize the kmax from kLow=3
+                repMsg=kTrussNaiveDirected(kLow,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                kUp=getupK(ag.neighbour.a, ag.neighbourR.a);
+                writeln("Estimated max up=",kUp);
+                //writeln("Max K Up=",kUp);
+                if ((AllRemoved==false) && (kUp>3)) {// k max >3
+                    var ConLoop=true:bool;
+                    while ( (ConLoop) && (kLow<kUp)) {
+                         // we will continuely check if the up value can remove the all edges
+                         forall i in 0..Ne-1 {
+                             lEdgeDeleted[i]=EdgeDeleted[i];
+                         }
+                         AllRemoved=SkMaxTrussNaiveDirected(kUp,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                         //writeln("Try up=",kUp);
+                         if (AllRemoved==false) { //the up value is the max k
+                                ConLoop=false;
+                         } else {// we will check the mid value to reduce k max
+                            kMid= (kLow+kUp)/2;
+                            forall i in 0..Ne-1 {
+                                lEdgeDeleted[i]=EdgeDeleted[i];
+                            }
+                            //writeln("Try mid=",kMid);
+                            AllRemoved=SkMaxTrussNaiveDirected(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                            if (AllRemoved==true) { // if mid value can remove all edges, we will reduce the up value for checking
+                                  kUp=kMid-1;
+                            } else { // we will improve both low and mid value
+                                if kMid==kUp-1 {
+                                    ConLoop=false;
+                                    kUp=kMid;
+                                } else {// we will update the low value and then check the mid value
+                                     while ((AllRemoved==false) && (kMid<kUp-1)) {
+                                        kLow=kMid;
+                                        kMid= (kLow+kUp)/2;
+                                        forall i in 0..Ne-1 { 
+                                            EdgeDeleted[i]=lEdgeDeleted[i];
+                                        }
+                                        //writeln("Try mid again=",kMid);
+                                        AllRemoved=SkMaxTrussNaiveDirected(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                                     }
+                                     kUp=kMid;
+                                     if ((AllRemoved==false) ) {
+                                     }
+                                  }
+                            }
+                         }
+                    }// end of while
+                    var countName = st.nextName();
+                    var countEntry = new shared SymEntry(lEdgeDeleted);
+                    st.addEntry(countName, countEntry);
+                    repMsg =  'created ' + st.attrib(countName);
+                    maxtimer.stop();
+                    writeln("After Max KTruss Naive Directed,Total execution time 1=",maxtimer.elapsed());
+                    writeln("After Max KTruss Naive Directed,Max k=",kUp);
+                } else {//kUp<=3 or AllRemoved==true
+                    maxtimer.stop();
+                    writeln("After Max KTruss Naive Directed,Total execution time 2=",maxtimer.elapsed());
+                    if (AllRemoved==false) {
+                        writeln("After Max KTruss Naive Directed,Max k=",3);
+                    } else {
+                        writeln("After Max KTruss Naive Directed,Max k=",2);
+                    }
+                }
+
+                //second the optimized method.
+
+                maxtimer.stop();
+                maxtimer.clear();
+                EdgeDeleted=-1;
+                lEdgeDeleted=-1;
+                maxtimer.start();
+                kLow=3;
+            
+                // we first initialize the kmax from kLow=3
+                repMsg=kTrussDirected(kLow,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                kUp=getupK(ag.neighbour.a, ag.neighbourR.a);
+                //writeln("Max K Up=",kUp);
+                if ((AllRemoved==false) && (kUp>3)) {// k max >3
+                    var ConLoop=true:bool;
+                    while ( (ConLoop) && (kLow<kUp)) {
+                         // we will continuely check if the up value can remove the all edges
+                         forall i in 0..Ne-1 {
+                             lEdgeDeleted[i]=EdgeDeleted[i];
+                         }
+                         AllRemoved=SkMaxTrussDirected(kUp,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                         //writeln("Try up=",kUp);
+                         if (AllRemoved==false) { //the up value is the max k
+                                ConLoop=false;
+                         } else {// we will check the mid value to reduce k max
+                            kMid= (kLow+kUp)/2;
+                            forall i in 0..Ne-1 {
+                                lEdgeDeleted[i]=EdgeDeleted[i];
+                            }
+                            //writeln("Try mid=",kMid);
+                            AllRemoved=SkMaxTrussDirected(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                            if (AllRemoved==true) { // if mid value can remove all edges, we will reduce the up value for checking
+                                  kUp=kMid-1;
+                            } else { // we will improve both low and mid value
+                                  if kMid==kUp-1 {
+                                      ConLoop=false;
+                                      kUp=kMid;
+                                  } else {// we will update the low value and then check the mid value
+                                     while ((AllRemoved==false) && (kMid<kUp-1)) {
+                                            kLow=kMid;
+                                            kMid= (kLow+kUp)/2;
+                                            forall i in 0..Ne-1 { 
+                                                EdgeDeleted[i]=lEdgeDeleted[i];
+                                            }
+                                            //writeln("Try mid again=",kMid);
+                                            AllRemoved=SkMaxTrussDirected(kMid,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                                     }
+                                     kUp=kMid;
+                                     if ((AllRemoved==false) ) {
+                                        ConLoop=false;
+                                     }
+                                  }
+                            }
+                         }
+                    }// end of while
+                    var countName = st.nextName();
+                    var countEntry = new shared SymEntry(lEdgeDeleted);
+                    st.addEntry(countName, countEntry);
+                    repMsg =  'created ' + st.attrib(countName);
+                    maxtimer.stop();
+                    writeln("After Optimized Max KTruss Directed ,Total execution time 1=",maxtimer.elapsed());
+                    writeln("After Optimized Max KTruss Directed ,Max k=",kUp);
+                } else {//kUp<=3 or AllRemoved==true
+                    maxtimer.stop();
+                    writeln("After Optimized Max KTruss Directed ,Total execution time 2=",maxtimer.elapsed());
+                    if (AllRemoved==false) {
+                        writeln("After Optimized Max KTruss Directed ,Max k=",3);
+                    } else {
+                        writeln("After Optimized Max KTruss Directed ,Max k=",2);
+                    }
+                }
           }//
       } else {
 
@@ -13771,15 +13923,15 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     st.addEntry(countName, countEntry);
                     repMsg =  'created ' + st.attrib(countName);
                     maxtimer.stop();
-                    writeln("After Naive Max KTruss Directed,Total execution time 1=",maxtimer.elapsed());
-                    writeln("After Naive Max KTruss Directed,Max k=",kUp);
+                    writeln("After Max KTruss Naive Directed,Total execution time 1=",maxtimer.elapsed());
+                    writeln("After Max KTruss Naive Directed,Max k=",kUp);
                 } else {//kUp<=3 or AllRemoved==true
                     maxtimer.stop();
-                    writeln("After Naive Max KTruss Directed,Total execution time 2=",maxtimer.elapsed());
+                    writeln("After Max KTruss Naive Directed,Total execution time 2=",maxtimer.elapsed());
                     if (AllRemoved==false) {
-                        writeln("After Naive Max KTruss Directed,Max k=",3);
+                        writeln("After Max KTruss Naive Directed,Max k=",3);
                     } else {
-                        writeln("After Naive Max KTruss Directed,Max k=",2);
+                        writeln("After Max KTruss Naive Directed,Max k=",2);
                     }
                 }
 
