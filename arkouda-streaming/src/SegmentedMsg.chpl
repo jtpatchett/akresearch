@@ -9563,10 +9563,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
           }
 
-          writeln("After Naive KTruss,Given k=",k);
-          writeln("After Naive KTruss,Total execution time=",timer.elapsed());
-          writeln("After Naive KTruss,Total number of iterations =",N2);
-          writeln("After Naive KTruss,Totally remove ",tmpi, " Edges");
+          writeln("After KTruss Naive,Given k=",k);
+          writeln("After KTruss Naive,Total execution time=",timer.elapsed());
+          writeln("After KTruss Naive,Total number of iterations =",N2);
+          writeln("After KTruss Naive,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -9825,10 +9825,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
               }
           }
 
-          writeln("After Naive KTruss List Intersection,Given k=",k);
-          writeln("After Naive KTruss List Intersection,Total execution time=",timer.elapsed());
-          writeln("After Naive KTruss List Intersection,Total number of iterations =",N2);
-          writeln("After Naive KTruss List Intersection,Totally remove ",tmpi, " Edges");
+          writeln("After KTruss Naive List Intersection,Given k=",k);
+          writeln("After KTruss Naive List Intersection,Total execution time=",timer.elapsed());
+          writeln("After KTruss Naive List Intersection,Total number of iterations =",N2);
+          writeln("After KTruss Naive List Intersection,Totally remove ",tmpi, " Edges");
 
           var countName = st.nextName();
           var countEntry = new shared SymEntry(EdgeDeleted);
@@ -13830,15 +13830,15 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
                     st.addEntry(countName, countEntry);
                     repMsg =  'created ' + st.attrib(countName);
                     maxtimer.stop();
-                    writeln("After Optimized Max KTruss Directed ,Total execution time 1=",maxtimer.elapsed());
-                    writeln("After Optimized Max KTruss Directed ,Max k=",kUp);
+                    writeln("After Max KTruss Directed ,Total execution time 1=",maxtimer.elapsed());
+                    writeln("After Max KTruss Directed ,Max k=",kUp);
                 } else {//kUp<=3 or AllRemoved==true
                     maxtimer.stop();
-                    writeln("After Optimized Max KTruss Directed ,Total execution time 2=",maxtimer.elapsed());
+                    writeln("After Max KTruss Directed ,Total execution time 2=",maxtimer.elapsed());
                     if (AllRemoved==false) {
-                        writeln("After Optimized Max KTruss Directed ,Max k=",3);
+                        writeln("After Max KTruss Directed ,Max k=",3);
                     } else {
-                        writeln("After Optimized Max KTruss Directed ,Max k=",2);
+                        writeln("After Max KTruss Directed ,Max k=",2);
                     }
                 }
           }//
