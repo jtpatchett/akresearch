@@ -12419,7 +12419,7 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
           //writeln("After Preprocessing");
 
           //we will try to remove all the unnecessary edges in the graph
-          while (ConFlag) {
+          {
               //ConFlag=false;
               // first we calculate the number of triangles
 
@@ -12498,8 +12498,10 @@ proc segmentedPeelMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTup
 
                 }// end of  on loc 
               } // end of coforall loc in Locales 
+          } // end of triangle counting
 
 
+          while (ConFlag) {
               coforall loc in Locales with (ref SetCurF ) {
                   on loc {
                      var ld = src.localSubdomain();
