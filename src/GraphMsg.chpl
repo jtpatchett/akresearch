@@ -661,7 +661,61 @@ module GraphMsg {
  
               return "success";
           }//end RCM_u
+          proc binSearchE(ary:[?D] int,l:int,h:int,key:int):int {
+                       if ( (l<D.low) || (h>D.high) || (l<0)) {
+                           return -1;
+                       }
+                       if ( (l>h) || ((l==h) && ( ary[l]!=key)))  {
+                            return -1;
+                       }
+                       if (ary[l]==key){
+                            return l;
+                       }
+                       if (ary[h]==key){
+                            return h;
+                       }
+                       var m= (l+h)/2:int;
+                       if ((m==l) ) {
+                            return -1;
+                       }
+                       if (ary[m]==key ){
+                            return m;
+                       } else {
+                            if (ary[m]<key) {
+                              return binSearchE(ary,m+1,h,key);
+                            }
+                            else {
+                                    return binSearchE(ary,l,m-1,key);
+                            }
+                       }
+          }// end of proc
 
+          proc findEdge(u:int,v:int):int {
+              //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
+              var D1=src.domain;
+              if ((u==v) || (u<D1.low) || (v<D1.low) || (u>D1.high) || (v>D1.high) ) {
+                    return -1;
+                    // we do not accept self-loop
+              }
+              var beginE=start_i[u];
+              var eid=-1:int;
+              if (neighbour[u]>0) {
+                  if (  (v>=dst[beginE]) && (v<=dst[beginE+neighbour[u]-1]) )  {
+                       eid=binSearchE(dst,beginE,beginE+neighbour[u]-1,v);
+                       // search <u,v> in undirect edges 
+                  } 
+              } 
+              if (eid==-1) {// if b
+                 beginE=start_i[v];
+                 if (neighbour[v]>0) {
+                    if ( (u>=dst[beginE]) && (u<=dst[beginE+neighbour[v]-1]) )  {
+                          eid=binSearchE(dst,beginE,beginE+neighbour[v]-1,u);
+                          // search <v,u> in undirect edges 
+                    } 
+                 }
+              }// end of if b
+              return eid;
+          }// end of  proc findEdge(u:int,v:int)
 
           coforall loc in Locales  {
               on loc {
@@ -687,6 +741,57 @@ module GraphMsg {
                 }
              }
              //writeln("degree array=",DegreeArray);
+      
+             coforall loc in Locales  {
+                on loc {
+                  forall i in src.localSubdomain(){
+                        var v1=src[i];
+                        var v2=dst[i];
+                        if (DegreeArray[v1]<DegreeArray[v2]) && (neighbourR[v1]>0) {
+                           var edgeIndex=start_iR[v1];
+                           forall v3 in dstR[edgeIndex..edgeIndex+neighbourR[v1]-1] {
+                              //replace <v3,v1> in <src,dst> with <v1,v3>
+                              var e=findEdge(v3,v1);
+                              if e!=-1 {
+                                 src[e]<=>dst[e];
+                              }
+                              
+                           }
+                        //writeln("Degree of vertex ",i," =",DegreeArray[i]," =",neighbour[i]," +",neighbourR[i]);
+                        }
+                   }
+                }
+             }
+
+
+             combine_sort();
+             neighbour=0;
+             start_i=-1;
+             set_neighbour();
+
+
+             coforall loc in Locales  {
+               on loc {
+                  forall i in srcR.localSubdomain(){
+                        srcR[i]=dst[i];
+                        dstR[i]=src[i];
+                   }
+               }
+             }
+             combine_sortR();
+             neighbourR=0;
+             start_iR=-1;
+             set_neighbourR();
+
+
+             coforall loc in Locales  {
+                on loc {
+                  forall i in neighbour.localSubdomain(){
+                        DegreeArray[i]=neighbour[i]+neighbourR[i];
+                        //writeln("Degree of vertex ",i," =",DegreeArray[i]," =",neighbour[i]," +",neighbourR[i]);
+                   }
+                }
+             }
              var tmpiv = argsortDefault(DegreeArray);
              forall i in 0..Nv-1 {
                  VertexArray[tmpiv[i]]=i;
