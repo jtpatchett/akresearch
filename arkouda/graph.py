@@ -438,7 +438,7 @@ def graph_file_read(Ne:int, Nv:int,Ncol:int,directed:int, filename: str)  -> Uni
         """
         cmd = "segmentedGraphFile"
         RCMFlag=0
-        DegreeSortFlag=0
+        DegreeSortFlag=1
         args="{} {} {} {} {} {} {}".format(Ne, Nv, Ncol,directed, filename,RCMFlag,DegreeSortFlag);
         repMsg = generic_msg(cmd=cmd,args=args)
         if (int(Ncol) >2) :

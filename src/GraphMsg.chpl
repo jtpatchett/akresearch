@@ -112,6 +112,7 @@ module GraphMsg {
                       //}
                       curline+=1;
                   } 
+                  writeln("The graph file is ",FileName);
                   if (curline<=srclocal.high) {
                      writeln("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
                      writeln("The input file ",FileName, " does not give enough edges for locale ", here.id);
@@ -7259,7 +7260,6 @@ module GraphMsg {
       }// end of proc
 
       proc getupK(nei:[?D1] int, neiR:[?D11] int):int {
-          //var dNumber=makeDistArray(Nv,int); //we need a global instead of local array
           var dNumber: [0..Nv-1] int;
           dNumber=0;
           var maxk=0:int;
@@ -7289,7 +7289,6 @@ module GraphMsg {
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int):bool {
           var SetCurF=  new DistBag(int,Locales);//use bag to keep the current frontier
           var SetNextF=  new DistBag((int,int),Locales); //use bag to keep the next frontier
-          //var lEdgeDeleted=makeDistArray(Ne,int); //we need a global instead of local array
           var N2=0:int;
           var k=kInput:int;
           var ConFlag=true:bool;
@@ -7479,7 +7478,6 @@ module GraphMsg {
               //if (!SetCurF.isEmpty()) {
               if ( SetCurF.getSize()<=0){
                       ConFlag=false;
-                      //k+=1;
               }
               SetCurF.clear();
 
@@ -9817,6 +9815,7 @@ module GraphMsg {
                                        } else {
                                           if ((EdgeDeleted[e] ==-1) && (x !=v) && (i<e)) {
                                                  var e3=findEdge(x,v);
+                                                 // wedge case i<e, u->v, u->x
                                                  if (e3!=-1) {
                                                      if (EdgeDeleted[e3]==-1) {
                                                          TriCount[i].add(1);
@@ -9841,9 +9840,11 @@ module GraphMsg {
                                           //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
                                        } else {
                                           if ((EdgeDeleted[e] ==-1) && (x !=u) && (i<e)) {
-                                                 var e3=findEdge(x,v);
+                                                 //var e3=findEdge(x,v);
+                                                 var e3=findEdge(x,u);
                                                  if (e3!=-1) {
                                                      if ((EdgeDeleted[e3]==-1) && (src[e3]==x) && (dst[e3]==u) && (e<e3)) {
+                                                         // cycle case i<e<e3, u->v->x->u
                                                          TriCount[i].add(1);
                                                          TriCount[e].add(1);
                                                          TriCount[e3].add(1);
@@ -9923,6 +9924,7 @@ module GraphMsg {
                                              var v4=dst[j]; 
                                              var tmpe:int;
                                              if ( (EdgeDeleted[j]<=-1) && ( v2!=v4 ) ) {
+                                                       //v1->v2, v1->v4
                                                        tmpe=findEdge(v2,v4);
                                                        if (tmpe!=-1) {// there is such third edge
                                                          if ( EdgeDeleted[tmpe]<=-1 ) {
@@ -9969,6 +9971,7 @@ module GraphMsg {
                                              var tmpe:int;
                                              if ( (EdgeDeleted[j]<=-1) && ( v1!=v4 )  ) {
                                                        tmpe=exactEdge(v4,v1);
+                                                       // cycle case v1->v2->v4->v1
                                                        if (tmpe!=-1)  {// there is such third edge
                                                          if ( EdgeDeleted[tmpe]<=-1 ) {
                                                                if ((EdgeDeleted[j]==-1) && (EdgeDeleted[tmpe]==-1)) {
@@ -10316,7 +10319,8 @@ module GraphMsg {
                                           //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
                                        } else {
                                           if ((EdgeDeleted[e] ==-1) && (x !=u) && (i<e)) {
-                                                 var e3=findEdge(x,v);
+                                                 //var e3=findEdge(x,v);
+                                                 var e3=findEdge(x,u);
                                                  if (e3!=-1) {
                                                      if ((EdgeDeleted[e3]==-1) && (src[e3]==x) && (dst[e3]==u) && (e<e3)) {
                                                          TriCount[i].add(1);
@@ -11721,7 +11725,8 @@ module GraphMsg {
                                           //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
                                        } else {
                                           if ((EdgeDeleted[e] ==-1) && (x !=u) && (i<e)) {
-                                                 var e3=findEdge(x,v);
+                                                 //var e3=findEdge(x,v);
+                                                 var e3=findEdge(x,u);
                                                  if (e3!=-1) {
                                                      if ((EdgeDeleted[e3]==-1) && (src[e3]==x) && (dst[e3]==u) && (e<e3)) {
                                                          TriCount[i].add(1);
@@ -12008,7 +12013,8 @@ module GraphMsg {
                                           //writeln("vertex ",x," and ",v," findEdge Error self-loop or no such edge");
                                        } else {
                                           if ((EdgeDeleted[e] ==-1) && (x !=u) && (i<e)) {
-                                                 var e3=findEdge(x,v);
+                                                 //var e3=findEdge(x,v);
+                                                 var e3=findEdge(x,u);
                                                  if (e3!=-1) {
                                                      if ((EdgeDeleted[e3]==-1) && (src[e3]==x) && (dst[e3]==u) && (e<e3)) {
                                                          TriCount[i].add(1);
@@ -12774,6 +12780,7 @@ module GraphMsg {
                       st);
       
           if (kValue>0) {// k branch
+                /*
                 writeln("Enter kTrussNaiveListIntersection k=",kValue);
                 repMsg=kTrussNaiveListIntersection(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                                ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
@@ -12781,7 +12788,7 @@ module GraphMsg {
                 writeln("Enter kTrussNaive k=",kValue);
                 repMsg=kTrussNaive(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-    
+                */
                 writeln("Enter kTrussListIntersection k=",kValue);
                 repMsg=kTrussListIntersection(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
@@ -12793,26 +12800,31 @@ module GraphMsg {
                 writeln("Enter kTrussMix k=",kValue);
                 repMsg=kTrussMix(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
-
+                /*
                 writeln("Enter kTrussNaive Directed k=",kValue);
                 repMsg=kTrussNaiveDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
-    
+                */
                 writeln("Enter kTruss Directed k=",kValue);
                 repMsg=kTrussDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
           } else if (kValue==-2) {
+                /*
                 writeln("Enter Truss Naive Decomposition");
                 repMsg=TrussDecompositionNaive(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+                */
                 writeln("Enter Truss Decomposition ");
                 repMsg=TrussDecomposition(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
                            ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
 
+                /*
                 writeln("Enter Truss Naive Decomposition Directed ");
                 repMsg=TrussNaiveDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                */
 
                 writeln("Enter Truss Decomposition Directed ");
                 repMsg=TrussDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
           } else  {//k max branch
+                /*
 
                 //first the naive method
                 maxtimer.clear();
@@ -12886,7 +12898,7 @@ module GraphMsg {
                     }
                 }
 
-
+                */
                 //second the optimized method.
 
                 maxtimer.stop();
@@ -12963,6 +12975,7 @@ module GraphMsg {
                     }
                 }
 
+                /*
                 //first the naive directed method
                 maxtimer.clear();
                 EdgeDeleted=-1;
@@ -13031,7 +13044,7 @@ module GraphMsg {
                         writeln("After Max KTruss Naive Directed,Max k=",2);
                     }
                 }
-
+                */
                 //second the optimized method.
 
                 maxtimer.stop();
@@ -13114,14 +13127,14 @@ module GraphMsg {
 
           if (kValue>0) {// k branch
 
-                writeln("Enter kTrussNaive Directed k=",kValue);
-                repMsg=kTrussNaiveDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
+                //writeln("Enter kTrussNaive Directed k=",kValue);
+                //repMsg=kTrussNaiveDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
     
                 writeln("Enter kTruss k=",kValue);
                 repMsg=kTrussDirected(kValue,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a );
           } else if (kValue==-2) {
-                writeln("Enter Truss Directed Naive Decomposition");
-                repMsg=TrussNaiveDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
+                //writeln("Enter Truss Directed Naive Decomposition");
+                //repMsg=TrussNaiveDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
 
                 writeln("Enter Truss Directed Decomposition ");
                 repMsg=TrussDecompositionDirected(3,ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a);
