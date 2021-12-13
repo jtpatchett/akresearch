@@ -1,6 +1,0 @@
-# suite: Benchmarks
-arkouda.graph
-# suite: String Benchmarks
-arkouda-string.graph
-# suite: Build Stats
-arkouda-comp.graph
