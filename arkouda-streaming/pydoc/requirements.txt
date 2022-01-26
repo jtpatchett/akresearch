@@ -1,0 +1,11 @@
+Sphinx
+sphinx-argparse
+sphinx-autoapi
+h5py
+pandas
+pexpect
+pytest 
+pytest-env
+typeguard
+numpy
+zmq
