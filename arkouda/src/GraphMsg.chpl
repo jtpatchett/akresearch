@@ -7608,7 +7608,7 @@ module GraphMsg {
       } // end of proc KTrussNaiveListIntersection
 
 
-
+//SomeComment
       // For undirected graph, using naive method. Its performance should be worse, but it is a simple implementation to 
       // check the correctness of the results
       proc kTrussNaive(k:int,nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
