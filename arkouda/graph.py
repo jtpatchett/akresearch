@@ -17,7 +17,8 @@ __all__ = ["GraphD","GraphDW","GraphUD","GraphUDW",
            "graph_bc",
            "graph_triangle",
            "stream_tri_cnt","streamPL_tri_cnt",
-           "KTruss" ]
+           "KTruss",
+           "TriangleCentrality"]
 
 
 
@@ -780,6 +781,48 @@ def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pda
         return create_pdarray(repMsg)
 
 
+@typechecked
+def TriangleCentrality(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],CentralityThreshold:float) -> pdarray:
+        """
+        This function will return the number of triangles in a static graph for each edge
+        Returns
+        -------
+        pdarray
+            The total number of triangles incident to each edge.
+
+        See Also
+        --------
+
+        Notes
+        -----
+        
+        Raises
+        ------  
+        RuntimeError
+        """
+        cmd="triangleCentrality"
+        if (int(graph.directed)>0)  :
+            args = "{} {} {} {} {} {} {} {} {}".format(
+                 kTrussValue,\
+                 graph.n_vertices,graph.n_edges,\
+                 graph.directed,graph.weighted,\
+                 graph.src.name,graph.dst.name,\
+                 graph.start_i.name,graph.neighbour.name )
+
+        else:
+            args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
+                 kTrussValue,\
+                 graph.n_vertices,graph.n_edges,\
+                 graph.directed,graph.weighted,\
+                 graph.src.name,graph.dst.name,\
+                 graph.start_i.name,graph.neighbour.name,\
+                 graph.srcR.name,graph.dstR.name,\
+                 graph.start_iR.name,graph.neighbourR.name )
+
+        #repMsg = generic_msg(msg)
+        #args="{} {} {} {} {}".format(Ne, Nv, Ncol,directed, filename);
+        repMsg = generic_msg(cmd=cmd,args=args)
+        return create_pdarray(repMsg)
 
 
 @typechecked

@@ -386,6 +386,7 @@ proc main() {
                 when "segmentedGraphBFS" {repTuple = segBFSMsg(cmd, args, st);}
                 when "segmentedGraphTri" {repTuple = segTriMsg(cmd, args, st);}
                 when "segmentedTruss"       {repTuple = segTrussMsg(cmd, args, st);}
+                when "triangleCentrality"       {repTuple = segTriCentralityMsg(cmd, args, st);}
 
 
 
