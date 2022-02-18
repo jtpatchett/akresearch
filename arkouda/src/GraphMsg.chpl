@@ -7191,6 +7191,8 @@ module GraphMsg {
       var srcN, dstN, startN, neighbourN,vweightN,eweightN, rootN :string;
       var srcRN, dstRN, startRN, neighbourRN:string;
       writeln("Initial compilation was successful");
+      
+      
       proc binSearchE(ary:[?D] int,l:int,h:int,key:int):int {
                        if ( (l<D.low) || (h>D.high) || (l<0)) {
                            return -1;
@@ -7219,18 +7221,204 @@ module GraphMsg {
                             }
                        }
       }// end of proc
+
+         
       proc triangle_centralityNaive(nei:[?D1] int, start_i:[?D2] int,src:[?D3] int, dst:[?D4] int,
                         neiR:[?D11] int, start_iR:[?D12] int,srcR:[?D13] int, dstR:[?D14] int) {
           var graphTriCount: int;
           var vertexTriCount=makeDistArray(Ne,int);
-          for v in 0..Ne-1 {
-              for neighbor in start_i[v]..nei[v]-1 {
-                  for nofn in src[neighbor].. nei[neighbor]-1 {
-                     bin
+          var EdgeDeleted=makeDistArray(Ne,int);
+          EdgeDeleted = -1;
+          var TriangleBag = new DistBag((int,int,int),Locales);
+          var setCurF 	= new DistBag(int, Locales);
+          var setNextF	= new DistBag((int, int), Locales);
+        proc findEdge(u:int,v:int):int {
+              //given the destinontion arry ary, the edge range [l,h], return the edge ID e where ary[e]=key
+              if ((u==v) || (u<D1.low) || (v<D1.low) || (u>D1.high) || (v>D1.high) ) {
+                    return -1;
+                    // we do not accept self-loop
+              }
+              var beginE=start_i[u];
+              var eid=-1:int;
+              if (nei[u]>0) {
+                  if ( (beginE>=0) && (v>=dst[beginE]) && (v<=dst[beginE+nei[u]-1]) )  {
+                       eid=binSearchE(dst,beginE,beginE+nei[u]-1,v);
+                       // search <u,v> in undirect edges 
+                  } 
+              } 
+              if (eid==-1) {// if b
+                 beginE=start_i[v];
+                 if (nei[v]>0) {
+                    if ( (beginE>=0) && (u>=dst[beginE]) && (u<=dst[beginE+nei[v]-1]) )  {
+                          eid=binSearchE(dst,beginE,beginE+nei[v]-1,u);
+                          // search <v,u> in undirect edges 
+                    } 
+                 }
+              }// end of if b
+              return eid;
+          }// end of  proc findEdge(u:int,v:int)          
+      proc RemoveDuplicatedEdges( cur: int):int {
+               if ( (cur<D3.low) || (cur >D3.high) || (cur==0) ) {
+                    return -1;
+               }
+               var u=src[cur]:int;
+               var v=dst[cur]:int;
+               var lu=start_i[u]:int;
+               var nu=nei[u]:int;
+               var lv=start_i[v]:int;
+               var nv=nei[v]:int;
+               var DupE:int;
+               if ((nu<=1) || (cur<=lu)) {
+                   DupE=-1;
+               } else {
+                   
+                   DupE =binSearchE(dst,lu,cur-1,v);
+               }
+               if (DupE!=-1) {
+                    EdgeDeleted[cur]=0;
+               } else {
+                   if (u>v) {
+                      if (nv<=0) {
+                         DupE=-1;
+                      } else {
+                         DupE=binSearchE(dst,lv,lv+nv-1,u);
+                      }
+                      if (DupE!=-1) {
+                           EdgeDeleted[cur]=0;
+                      }
+                   }
+               }
+               return DupE;
+          } //end RemoveDuplicatedEdges
+          
+          
+          coforall loc in Locales {
+          on loc{
+              var ld = src.localSubdomain();
+              var startEdge = ld.low;
+              var endEdge = ld.high;
+              forall i in startEdge..endEdge {
+                  var uf = src[i];
+                  var vf = dst[i];
+                  if (EdgeDeleted[i] == -1) {
+                  	var DupE = RemoveDuplicatedEdges[i];
+                  	if (DupE == -1){
+                  		EdgeDeleted[i] = 0;
+                  		}
+                 	}
+              } //end forall
+          	
+          
+          
+              }
+          }
+          coforall loc in Locales with(ref TriangleBag) {
+          on loc{
+          	var ld = src.localSubdomain();
+          	var startEdge = ld.low;
+          	var endEdge = ld.high;
+          	forall i in startEdge..endEdge with(ref TriangleBag) {
+          		//Only add to Distbag if u < v < w
+          	    var uadj = new set(int, parSafe = true);
+          	    var vadj = new set(int, parSafe = true);
+          	    var u = src[i];
+          	    var v = dst[i];
+
+          	    if ((EdgeDeleted[i] == -1) && u < v) {
+          	        var nghbrStart = start_i[u];
+          	        var nghbrEnd = nghbrStart + nei[u] -1;
+          	        if (nei[u] > 1) {
+          	            forall w in dst[nghbrStart..nghbrEnd] with (ref uadj) {
+          	                var e=findEdge(u,w);
+          	                if ((e != -1) && (EdgeDeleted[e] == -1) && (w > v)) {
+          	                    uadj.add(w);
+          	                }
+          	             }
+          	             }
+          	        nghbrStart = start_iR[u];
+         	        nghbrEnd = nghbrStart + neiR[u] -1;
+          	        if (neiR[u] > 1) {
+          	            forall w in dst[nghbrStart..nghbrEnd] with (ref uadj) {
+          	                var e=findEdge(u,w);
+          	                if ((e != -1) && (EdgeDeleted[e] == -1) && (w > v)) {
+          	                    uadj.add(w);
+          	                }
+          	             }
+          	        }          	        
+          	    
+          	    nghbrStart = start_i[v];
+          	    nghbrEnd = nghbrStart + nei[v] -1;
+          	    if (nei[v] >0 ) {
+          	        forall w in dst[nghbrStart..nghbrEnd] with (ref vadj ) {
+          	            var e = findEdge(v,w);
+          	            if ((e!=-1) && (w > v) && (EdgeDeleted[e] == -1)) {
+          	                vadj.add(w);
+          	            
+          	        }
+          	    } 	
+          	}
+          	    nghbrStart = start_iR[v];
+          	    nghbrEnd = nghbrStart + neiR[v] -1;
+          	    if (neiR[v] >0 ) {
+          	        forall w in dst[nghbrStart..nghbrEnd] with (ref vadj ) {
+          	            var e = findEdge(v,w);
+          	            if ((e!=-1) && (w > v) && (EdgeDeleted[e] == -1)) {
+          	                vadj.add(w);
+          	            
+          	        }
+          	    } 	
+          	}
+          	}
+          if (! uadj.isEmpty()) {
+              forall wu in uadj with (ref TriangleBag) {
+                  if vadj.contains(wu) {
+                      TriangleBag.add((u,v,wu));
                   }
               }
           }
-      return new MsgTuple(repMsg, MsgType.NORMAL);  
+          }
+          
+          }            
+      }
+      coforall loc in Locales {
+      on loc {
+          forall ni in 0..Nv-1 {
+              forall tris in TriangleBag {
+                  if tris[0] == ni {
+                  vertexTriCount[ni] += 1;
+                  }
+                  if tris[1] == ni {
+                  vertexTriCount[ni] += 1;
+                  }
+                  if tris[2] == ni {
+                  vertexTriCount[ni] += 1;
+                  }
+              }
+          }
+      } //End on loc
+      }//End loc in locales
+      return vertexTriCount;
+      }
+               //var countName:string;
+      var ag = new owned SegGraphUD(Nv,Ne,Directed,Weighted,
+                      srcN,dstN, startN,neighbourN,
+                      srcRN,dstRN, startRN,neighbourRN,
+                      st);
+      var vertexTriCount= triangle_centralityNaive(ag.neighbour.a, ag.start_i.a,ag.src.a,ag.dst.a,
+                           ag.neighbourR.a, ag.start_iR.a,ag.srcR.a,ag.dstR.a);
+         writeln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+          writeln("TriangleNumber=", vertexTriCount);
+          //writeln("LocalRatio=", (totalLocal:real)/((totalRemote+totalLocal):real),", TotalTimes=",totalRemote+totalLocal);
+          //writeln("LocalAccessTimes=", totalLocal,", RemoteAccessTimes=",totalRemote);
+          writeln("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+          //writeln("1000 Locale=",here.id, " subTriSum=", subTriSum, "TotalCnt=",vertexTriCount);
+          var countName = st.nextName();
+          var countEntry = new shared SymEntry(vertexTriCount);
+          st.addEntry(countName, countEntry);
+
+          var cntMsg =  'created ' + st.attrib(countName);
+          //return cntMsg;    
+      	  return new MsgTuple(cntMsg, MsgType.NORMAL);  
   }
 
   proc segTrussMsg(cmd: string, payload: string, st: borrowed SymTab): MsgTuple throws {

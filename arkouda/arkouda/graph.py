@@ -782,7 +782,7 @@ def KTruss(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],kTrussValue:int) -> pda
 
 
 @typechecked
-def TriangleCentrality(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],CentralityThreshold:float) -> pdarray:
+def TriangleCentrality(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],CentralityThreshold:int) -> pdarray:
         """
         This function will return the number of triangles in a static graph for each edge
         Returns
@@ -803,7 +803,6 @@ def TriangleCentrality(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],CentralityT
         cmd="triangleCentrality"
         if (int(graph.directed)>0)  :
             args = "{} {} {} {} {} {} {} {} {}".format(
-                 kTrussValue,\
                  graph.n_vertices,graph.n_edges,\
                  graph.directed,graph.weighted,\
                  graph.src.name,graph.dst.name,\
@@ -811,7 +810,6 @@ def TriangleCentrality(graph: Union[GraphD,GraphDW,GraphUD,GraphUDW],CentralityT
 
         else:
             args = "{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
-                 kTrussValue,\
                  graph.n_vertices,graph.n_edges,\
                  graph.directed,graph.weighted,\
                  graph.src.name,graph.dst.name,\
